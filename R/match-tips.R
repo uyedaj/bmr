@@ -3,6 +3,7 @@ library(geiger)
 dir.create("output/data")
 
 remove_dups <- function(x){
+    x <- x[complete.cases(x),]
     x[,"species"] <- as.character(x[,"species"])
     x <- x[!duplicated(x$species),]
     rownames(x) <- x$species
