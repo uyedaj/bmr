@@ -29,14 +29,14 @@ dat.amph <- remove_dups(dat.amph)
 
 phy.amph <- read.tree("datasets/amph.tre")
 td.amph  <- treedata(phy.amph, dat.amph)
-saveRDS(td.squa, "output/data/amphibians.rds")
+saveRDS(td.amph, "output/data/amphibians.rds")
 
 dat.fish <- read.csv("datasets/White_Fishes.csv")
 dat.fish <- remove_dups(dat.fish)
 
 phy.fish <- read.tree("datasets/fish.tre")
 td.fish  <- treedata(phy.fish, dat.fish)
-saveRDS(td.squa, "output/data/fish.rds")
+saveRDS(td.fish, "output/data/fish.rds")
 
 dat.bird <- read.csv("datasets/Whiteetal_bird.csv")
 dat.bird <- remove_dups(dat.bird)
