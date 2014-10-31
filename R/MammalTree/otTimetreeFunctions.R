@@ -396,3 +396,28 @@ replaceHashes <- function(target, table){
   table[,1] <- unlist(hashes)
   return(list(scion=scion, table=table))
 }
+
+reconcileCalibrations <- function(tree, calibrations){
+  tree <- reorder(tree, "postorder")
+  nodes <- sapply(1:nrow(calibrations), function(x) getMRCA(tree, c(calibrations$taxonA[x], calibrations$taxonB[x])))
+  desc <- lapply(nodes, function(x) getDescendants(tree, x))
+  names(desc) <- nodes
+  
+  for(i in length(nodes):1){
+    fnodeAge <- c(calibrations$MaxAge[i], calibrations$MinAge[i])
+    daughterCals <- which(nodes %in% c(nodes[i], desc[[i]]))
+    if(length(daughterCals) > 0){
+      daughterNodeAges <- cbind(calibrations$MaxAge[daughterCals], calibrations$MinAge[daughterCals])
+      rownames(daughterNodeAges) <- nodes[daughterCals]
+      if(max(daughterNodeAges[,1]) > fnodeAge[1]){
+        #calibrations$MinAge[match(nodes[daughterNodeAges[,2] > calibrations$MinAge[i]], nodes)] <- calibrations$MinAge[i]
+        calibrations$MaxAge[i] <- max(daughterNodeAges[,1])+0.5
+      }
+      if(any(daughterNodeAges[,2] > fnodeAge[2])){
+        calibrations$MinAge[daughterCals[which(daughterNodeAges[,2] > fnodeAge[2])]] <- fnodeAge[2] -0.5
+      }
+    }
+  }
+  return(calibrations)
+}
+
