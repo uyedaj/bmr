@@ -1,0 +1,46 @@
+This is BibTeX, Version 0.99d (TeX Live 2013/Debian)
+Capacity: max_strings=35307, hash_size=35307, hash_prime=30011
+The top-level auxiliary file: EnergeticsPreprosal.aux
+The style file: cj.bst
+Database file #1: metabolism.bib.bib
+You've used 66 entries,
+            2169 wiz_defined-function locations,
+            965 strings with 15969 characters,
+and the built_in function-call counts, 23024 in all, are:
+= -- 1767
+> -- 787
+< -- 4
++ -- 486
+- -- 184
+* -- 1529
+:= -- 2697
+add.period$ -- 132
+call.type$ -- 66
+change.case$ -- 60
+chr.to.int$ -- 0
+cite$ -- 66
+duplicate$ -- 2177
+empty$ -- 2167
+format.name$ -- 235
+if$ -- 5050
+int.to.chr$ -- 0
+int.to.str$ -- 66
+missing$ -- 564
+newline$ -- 201
+num.names$ -- 66
+pop$ -- 785
+preamble$ -- 1
+purify$ -- 0
+quote$ -- 0
+skip$ -- 377
+stack$ -- 0
+substring$ -- 1326
+swap$ -- 1424
+text.length$ -- 4
+text.prefix$ -- 0
+top$ -- 0
+type$ -- 0
+warning$ -- 0
+while$ -- 148
+width$ -- 68
+write$ -- 587
