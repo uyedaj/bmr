@@ -71,7 +71,7 @@ for(i in taxa){
   dir <- paste("../output/figures/", sep="")
   #dir.create(dir)
   pdf(paste(dir ,i,"posteriors.pdf", sep=""))
-  plotPosteriors(tree, dat, pred, chain, burnin=0.3, cutoff=0.1)
+  try(plotPosteriors(tree, dat, pred, chain, burnin=0.3, cutoff=0.1))
   dev.off()
 }
 

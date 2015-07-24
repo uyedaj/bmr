@@ -78,7 +78,7 @@ BetaBMR.monitor = function(i, lik, pr, pars, accept, accept.type, j){
 ## We're going to define a custom model with variable slopes (beta1)
 model.BetaBMR <- list(moves = list(alpha=".multiplierProposal", sig2=".multiplierProposal", beta1=".vectorMultiplier", k=".splitmergebd", "theta"=".adjustTheta", slide=".slide"),
                       control.weights = list("alpha"=4,"sig2"=2,"beta1"=4, "theta"=4,"slide"=2,"k"=10),
-                      D = list(alpha=1, sig2= 1, beta1=0.05, k = c(1, 1), theta=1, slide=1),
+                      D = list(alpha=2, sig2= 1, beta1=0.05, k = c(1, 1), theta=1, slide=1),
                       parorder = c("alpha", "sig2", "beta1", "k", "ntheta", "theta"),
                       rjpars = c("beta1", "theta"),
                       shiftpars = c("sb", "loc", "t2"),

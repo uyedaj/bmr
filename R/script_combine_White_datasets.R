@@ -6,19 +6,19 @@ library(dplyr)
 
 #load the datasets
 
-fish <- read.csv("White_Fishes.csv")
-amph <- read.csv("White_Amph.csv")
-bird <- read.csv("Whiteetal_bird.csv")
-mamm <- read.csv("White_Mamm.csv")
-squa <- read.csv("White_Squa.csv")
+fish <- read.csv("../datasets/White_Fishes.csv")
+amph <- read.csv("../datasets/White_Amph.csv")
+bird <- read.csv("../datasets/Whiteetal_bird.csv")
+mamm <- read.csv("../datasets/White_Mamm.csv")
+squa <- read.csv("../datasets/White_Squa.csv")
 
 #load the trees
 
-fishTree <- read.tree("fish.tre")
-amphTree <- read.tree("amph.tre")
-birdTree <- read.tree("bird.tre")
-mammTree <- read.tree("mamm.tre")
-squaTree <- read.tree("squa.tre")
+fishTree <- read.tree("../datasets/fish.tre")
+amphTree <- read.tree("../datasets/amph.tre")
+birdTree <- read.tree("../datasets/bird.tre")
+mammTree <- read.tree("../datasets/mamm.tre")
+squaTree <- read.tree("../datasets/squa.tre")
 
 #confirm all names match. ugly function with no checks in it for different formatting 
 #issues. that that it expects a list of lists, where first set of lists are the data
@@ -62,11 +62,13 @@ traits$color <- c(rep("#1B9E77", length(fish$species)), rep("#D95F02", length(am
 #take out any where mean mass is na. Once you do this, there are no entries where q10smr 
 #is na either
 
-final <- traits[!is.na(traits$mean.mass),]
+#final <- traits[!is.na(traits$mean.mass),]
+final <- traits
 
 #write.csv(final, "final_white_etal.csv", row.names=FALSE)
+write.csv(final, "../datasets/all_white_etal.csv", row.names=FALSE)
 
-plot(log(final$q10smr)~log(final$mean.mass), col=final$color, xlab="Ln(body mass)", 
+plot(log(final$MR)~log(final$mass), col=final$color, xlab="Ln(body mass)", 
 	ylab="Ln(basal metabolic rate)", pch=20)
 
 legend("topleft", c("Fishes", "Amphibians", "Birds", "Mammals", "Squamates"), pch=20, 

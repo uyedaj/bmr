@@ -403,7 +403,7 @@ reconcileCalibrations <- function(tree, calibrations){
   desc <- lapply(nodes, function(x) getDescendants(tree, x))
   names(desc) <- nodes
   
-  for(i in length(nodes):1){
+  for(i in 1:length(nodes)){
     fnodeAge <- c(calibrations$MaxAge[i], calibrations$MinAge[i])
     daughterCals <- which(nodes %in% c(nodes[i], desc[[i]]))
     if(length(daughterCals) > 0){
