@@ -1,0 +1,5 @@
+#! /bin/bash
+INPUT="TEST"
+Rscript test.R > test.out 2>&1 $INPUT &
+done
+

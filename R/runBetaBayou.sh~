@@ -1,0 +1,6 @@
+#! /bin/bash
+DATASET="../datasets/mamm.rds"
+Rscript --no-save --no-restore --verbose runBetaBayou.R > outfile$DATASET.Rout 2>&1 $DATASET) &
+#echo $TREE $SIMPAR $PRSET; sleep 0.5 &
+
+done

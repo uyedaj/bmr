@@ -1,0 +1,6 @@
+#! /bin/bash
+BASE = "mamm"
+FILES = "../datasets/$BASE.rds"
+echo FILES
+
+done
