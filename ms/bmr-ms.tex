@@ -32,7 +32,7 @@
 \newcommand{\kronecker}{\raisebox{1pt}{\ensuremath{\:\otimes\:}}} 
 
 \title{The evolution of energetic scaling across the vertebrate tree of life}
-\author{Josef C. Uyeda$^{1,*}$, Matthew W. Pennell$^{1,2}$, Eliot T. Miller$^{1,3}$, \\Rafael Maia$^{1,4}$, \& and Craig R. McClain$^5$}
+\author{Josef C. Uyeda$^{1,*}$, Matthew W. Pennell$^{1,2}$, Eliot T. Miller$^{1,3}$, \\Rafael Maia$^{1,4}$, \& Craig R. McClain$^5$}
 
 \date{}
 \affiliation{
@@ -99,16 +99,18 @@ We know that the long-term rate of trait evolution has been highly variable acro
 \section*{Methods}
 
 \subsection*{Metabolic rate data}
-...Fill in description of the white data...
+For our analysis, we augmented a previously published collection of metabolic rates \citep{white2006}.
 
-We tested alternative standardizations of the White et al. dataset using either q10 standardization or Arrhenius standardization (cite). Our goal was to identify a standardization that required the fewest, and most biologically realistic assumptions given our goal of detecting shifts in the allometric scaling across clades. 
+We tested alternative standardizations of the White et al. dataset using either $q_{10}$ standardization or Arrhenius standardization (cite). Our goal was to identify a standardization that required the fewest, and most biologically realistic assumptions given our goal of detecting shifts in the allometric scaling across clades. 
 
 \subsection*{Phylogenetic data}
-....Fill in Source Trees .....
+Our analysis spans 5 major clades of vertebrates: mammals, birds, squamate reptiles (correct?), amphibians, and bony fish. For birds, squamates, amphibians, and bony fish, we used recently published megaphylogenies for each clade \citep[][respectively]{Jetz2012, Pyron2014, Pyronamph, Rabosky2012}. For the mammals, comprehensive supertrees \citep{Binindaemonds2007} and trees derived from supermatrices \citep{Faurby2015} were either in conflict with better resolved trees \citep[e.g.,][]{Meredith2011} or lacked reliable branch lengths, which are necessary for our purpose. As an alternative, we made use of the collection of phylogenies curated by the Open Tree of Life project \citep{OpenTree} to construct a synthetic tree based on the best available data. Open Tree only produces topologies (i.e., the trees do not include branch lengths) and we calibrated the synthetic tree using `congruification' \citep{EastmanCongruify} and previously published timetrees. Full details on the source trees, calibration points, and bioinformatic pipeline are described in Appendix I. We think that merging the Open Tree synthetic tree with validated calibrations is likely to be a good option for conducting comparative analyses at large scales, particularly in cases where a reliable species-level tree is unavailable.
 
-\subsubsection*{Mammalian phylogeny pipeline} Recently published phylogenies in mammals (e.g. \citet{Faurby2014}) have greatly improved the resolution of the mammalian tree of life. While we could have used these resources as our Mammalian phylogeny, we chose to instead take a different route and utilize the synthetic resources of the OpenTree of life \citep{Cranston, OpenTree}. The advantage here is that the OpenTree of life is constantly updating as an increasing number of studies are added to the database. Combined with the freely available scripts we distribute with this manuscript, we argue that tying our analysis directly to these resources will enable repeated analyses as quality trees are added to the database. We describe in the supplementary material the full pipeline by which we obtain a topology and assign branch lengths to the mammalian phylogeny. While this method could in theory be applied to other groups, we chose to limit our analysis to mammals for which multiple, well-calibrated timetrees exist which can be used to calibrate every node in the tree. \\
+We used the Timetree of Life \citep{Hedgestimetree} to obtain divergence times between the five major clades and stitch the trees together manually. This allowed us to detect shifts that may have occured at the base of the major clades. We note that in practice, the actual divergence times used have very little effect on the analyses as the stem length of each group is so large relative to the phylogenetic half-life \citep{HansenOrzack1997} of the trait models we used.
 
-These 5 trees were then stitched together manually to generate a complete tree. Dates for the splits between major clades was obtained from the timetree of life \citep{Hedges}.
+% \subsubsection*{Mammalian phylogeny pipeline} Recently published phylogenies in mammals (e.g. \citet{Faurby2014}) have greatly improved the resolution of the mammalian tree of life. While we could have used these resources as our Mammalian phylogeny, we chose to instead take a different route and utilize the synthetic resources of the OpenTree of life \citep{Cranston, OpenTree}. The advantage here is that the OpenTree of life is constantly updating as an increasing number of studies are added to the database. Combined with the freely available scripts we distribute with this manuscript, we argue that tying our analysis directly to these resources will enable repeated analyses as quality trees are added to the database. We describe in the supplementary material the full pipeline by which we obtain a topology and assign branch lengths to the mammalian phylogeny. While this method could in theory be applied to other groups, we chose to limit our analysis to mammals for which multiple, well-calibrated timetrees exist which can be used to calibrate every node in the tree. \\
+
+%These 5 trees were then stitched together manually to generate a complete tree. Dates for the splits between major clades was obtained from the timetree of life \citep{Hedges}.
 
 \subsection*{OU-BMR model} 
 
