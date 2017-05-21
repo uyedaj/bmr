@@ -1,6 +1,6 @@
 ## Preliminary data preparation
 ## Match and prepare the datasets
-td <- readRDS(paste("../output/data/", args[[1]], ".rds", sep=""))
+#td <- readRDS(paste("../output/data/", args[[1]], ".rds", sep=""))
 tdgs <-  readRDS(paste("../output/data/", "tetrapods_gs", ".rds", sep=""))
 td$dat$lnGenSize <- tdgs$dat$lnGenSize[match(td$phy$tip.label, tdgs$phy$tip.label)]
 tree <- td$phy
@@ -24,6 +24,8 @@ colnames(.pred) <- c("lnMass", "lnMass2", "lnGS")
 ## Create a bayou cache object
 cache <- bayou:::.prepare.ou.univariate(tree, setNames(dat$lnBMR, tree$tip.label), pred = .pred)
 pred <- cache$pred
+.prepare.ou.univariate <- bayou:::.prepare.ou.univariate
+.tipregime <- bayou:::.tipregime
 
 ## Get optimized starting values and trait evolutionary models for genome size. 
 require(phylolm)#$impute 
@@ -34,13 +36,14 @@ aics <- sapply(fits, function(x) x$aic)#$impute
 bestfit <- fits[[which(aics == min(aics))]]#$impute 
 
 missing <- which(is.na(cache$pred[,3])) #$impute
+cache$pred <- as.data.frame(cache$pred)
 pv <- getPreValues(cache) #$impute
 
 lnBMR <- setNames(dat[['lnBMR']], tree$tip.label)
 lnMass <- setNames(dat[['lnMass']], tree$tip.label)
 .pred <- cbind(setNames(dat[['lnMass']], tree$tip.label), setNames(dat[['lnMass']]^2, tree$tip.label), setNames(dat[['lnGenSize']], tree$tip.label))
 colnames(.pred) <- c("lnMass", "lnMass2", "lnGS")
-endotherms <- lapply(cache$desc$tips[cache$phy$edge[c(845, 1695), 2]], function(x) cache$phy$tip.label[x])
+endotherms <- lapply(cache$desc$tips[cache$phy$edge[c(845, 1707), 2]], function(x) cache$phy$tip.label[x])
 pred <- data.frame(pred, endo=as.numeric(cache$phy$tip.label %in% unlist(endotherms)))
 .pred <- pred
 
@@ -49,7 +52,7 @@ pred <- data.frame(pred, endo=as.numeric(cache$phy$tip.label %in% unlist(endothe
 cache <- bayou:::.prepare.ou.univariate(tree, lnBMR, pred = .pred)
 tmp <- lm(lnBMR ~ lnMass + lnMass2 + lnGS+endo, data=data.frame(.pred))
 summary(tmp)
-sumpars <- readRDS(paste("../output/data/", args[[4]], ".rds", sep=""))
+sumpars <- readRDS(paste("../output/data/", "sumpars_u6", ".rds", sep=""))
 
 ## Metabolic rate models
 ## Priors for different parameters, so that these are easily changed for all models
@@ -612,12 +615,12 @@ prior.RR000 <- make.prior(tree, plot.prior = FALSE,
                                      dbeta_endo="dnorm",
                                      dsb="dsb", dk="cdpois", dtheta="dnorm"
                           ), 
-                          param=list(dalpha=param.alpha, dsig2=param.sig2, dbeta_lnMass=param.beta_lnMass,
+                          param=list(dalpha=param.alpha, dsig2=param.sig2, dbeta_lnMass=list(mean=0.7, sd=0.75),
                                      #dbeta_lnMass2=param.beta_lnMass2,
                                      #dbeta_lnGS=param.beta_lnGS,
-                                     dbeta_endo=param.beta_endo,
+                                     dbeta_endo=list(mean=5, sd=1),
                                      dk=param.k, dsb=param.sb, 
-                                     dtheta=param.theta
+                                     dtheta=list(mean=-3, sd=1.5)
                           )
 )
 model.RR000 <- makeBayouModel(lnBMR ~ lnMass + endo, rjpars = c("theta", "lnMass"), cache, prior.RR000, D=D.XXX(2))

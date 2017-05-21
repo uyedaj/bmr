@@ -19,16 +19,21 @@ dat <- td$dat
 lnBMR <- setNames(dat[['lnBMR']], tree$tip.label)
 lnMass <- setNames(dat[['lnMass']], tree$tip.label)
 .pred <- cbind(setNames(dat[['lnMass']], tree$tip.label), setNames(dat[['lnMass']]^2, tree$tip.label),setNames(dat[['lnGenSize']], tree$tip.label))
-colnames(.pred) <- c("lnMass", "lnMass2", "lnGS")
+colnames(.pred) <- c(".lnMass", ".lnMass2", ".lnGS")
+.pred2 <- mutate(as.data.frame(.pred), lnMass=scale(.lnMass), lnMass2=scale(.lnMass)^2, lnGS=scale(.lnGS)) %>% select(., lnMass, lnMass2, lnGS)
+.pred2 <- as.matrix(.pred2)
+rownames(.pred2) <- rownames(.pred)
+scalePars <- list(lnMass=attributes(scale(.pred[,1]))[c('scaled:center','scaled:scale')], lnGS=attributes(scale(.pred[,3]))[c('scaled:center','scaled:scale')])
 
 ## Create a bayou cache object
-cache <- bayou:::.prepare.ou.univariate(tree, setNames(dat$lnBMR, tree$tip.label), pred = .pred)
+cache <- bayou:::.prepare.ou.univariate(tree, setNames(dat$lnBMR, tree$tip.label), pred = .pred2)
 pred <- cache$pred
 
 ## Get optimized starting values and trait evolutionary models for genome size. 
 require(phylolm)#$impute 
 #td <- mutate(td, TempK = 1/(Temperature.C+273.15))
 tdgs <- filter(td, !is.na(lnGenSize))#$impute 
+tdgs <- mutate(tdgs, lnGenSize=(lnGenSize - scalePars$lnGS$`scaled:center`)/(scalePars$lnGS$`scaled:scale`))
 fits <- lapply(c("BM"), function(x) phylolm(lnGenSize~1, data=tdgs$dat, phy=tdgs$phy, model=x))#$impute 
 aics <- sapply(fits, function(x) x$aic)#$impute 
 bestfit <- fits[[which(aics == min(aics))]]#$impute 
@@ -38,23 +43,24 @@ pv <- getPreValues(cache) #$impute
 
 lnBMR <- setNames(dat[['lnBMR']], tree$tip.label)
 lnMass <- setNames(dat[['lnMass']], tree$tip.label)
-.pred <- cbind(setNames(dat[['lnMass']], tree$tip.label), setNames(dat[['lnMass']]^2, tree$tip.label), setNames(dat[['lnGenSize']], tree$tip.label))
-colnames(.pred) <- c("lnMass", "lnMass2", "lnGS")
-endotherms <- lapply(cache$desc$tips[cache$phy$edge[c(845, 1695), 2]], function(x) cache$phy$tip.label[x])
+#.pred <- cbind(setNames(dat[['lnMass']], tree$tip.label), setNames(dat[['lnMass']]^2, tree$tip.label), setNames(dat[['lnGenSize']], tree$tip.label))
+#colnames(.pred) <- c("lnMass", "lnMass2", "lnGS")
+endotherms <- lapply(cache$desc$tips[cache$phy$edge[c(845, 1707), 2]], function(x) cache$phy$tip.label[x])
 pred <- data.frame(pred, endo=as.numeric(cache$phy$tip.label %in% unlist(endotherms)))
-.pred <- pred
 
 #pred <- select(pred, lnBMR, lnMass, lnBMRR, lnLs, growthC, humidity, elevation,  tempK, tcoldq.me, precip,pdryq.me, alt.me)
 
 cache <- bayou:::.prepare.ou.univariate(tree, lnBMR, pred = .pred)
 tmp <- lm(lnBMR ~ lnMass + lnMass2 + lnGS+endo, data=data.frame(.pred))
+tmp <- lm(lnBMR ~ lnMass + lnMass2 + lnGS+endo, data=data.frame(.pred))
+
 summary(tmp)
 sumpars <- readRDS(paste("../output/data/", args[[4]], ".rds", sep=""))
 
 ## Metabolic rate models
 ## Priors for different parameters, so that these are easily changed for all models
-param.alpha <- list(scale=1)
-param.sig2 <- list(scale=1)
+param.halflife <- list(meanlog=log(50), sdlog=3)
+param.Vy <- list(scale=1)
 param.beta_lnMass <- list(mean=0.7, sd=0.1)
 param.beta_lnMass2 <- list(mean=0, sd=0.01)
 param.beta_lnGS <- list(mean=0, sd=0.5)
@@ -580,28 +586,6 @@ prior.NN000 <- make.prior(tree, plot.prior = FALSE,
 model.NN000 <- makeBayouModel(lnBMR ~ lnMass + endo, rjpars = c("theta", "lnMass"), cache, prior.NN000, D=D.XXX(2))
 prior.NN000(model.NN000$startpar)
 model.NN000$model$lik.fn(model.NN000$startpar, cache, cache$dat)$loglik
-
-## N1000
-prior.N1000 <- make.prior(tree, plot.prior = FALSE, 
-                          dists=list(dalpha="dhalfcauchy", dsig2="dhalfcauchy", dbeta_lnMass="dnorm",
-                                     #dbeta_lnMass2="dnorm",
-                                     #dbeta_lnGS="dnorm",
-                                     #dbeta_TempK="dnorm",
-                                     dbeta_endo="dnorm",
-                                     dsb="fixed", dk="fixed", dtheta="dnorm"
-                          ), 
-                          param=list(dalpha=param.alpha, dsig2=param.sig2, dbeta_lnMass=param.beta_lnMass,
-                                     #dbeta_lnMass2=param.beta_lnMass2,
-                                     #dbeta_lnGS=param.beta_lnGS,
-                                     dbeta_endo=param.beta_endo,
-                                     dk="fixed", dsb="fixed", 
-                                     dtheta=param.theta
-                          ),
-                          fixed=list(k=fixed.k, sb=fixed.sb, loc=fixed.loc)
-)
-model.N1000 <- makeBayouModel(lnBMR ~ lnMass + endo, rjpars = c("theta"), cache, prior.N1000, D=D.XXX(1))
-prior.N1000(model.N1000$startpar)
-model.N1000$model$lik.fn(model.N1000$startpar, cache, cache$dat)$loglik
 
 ## RR000
 prior.RR000 <- make.prior(tree, plot.prior = FALSE, 

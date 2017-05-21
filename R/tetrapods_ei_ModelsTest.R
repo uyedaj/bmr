@@ -101,7 +101,7 @@ prior.11000 <- make.prior(tree, plot.prior = FALSE,
                     fixed=list(k=0, sb=numeric(0), loc=numeric(0), t2=numeric(0))
 )
 
-model.11000 <- makeBayouModel(lnBMR ~ lnMass + endo, rjpars = numeric(0), cache, prior.11000, impute = NULL, D=D.1XX(1))
+model.11000 <- makeBayouModelDev(lnBMR ~ lnMass + endo, rjpars = numeric(0), cache, prior.11000, impute = NULL, D=D.1XX(1))
 prior.11000(model.11000$startpar)
 model.11000$model$lik.fn(model.11000$startpar, cache, cache$dat)$loglik
 
@@ -120,7 +120,7 @@ prior.11100 <- make.prior(tree, plot.prior = FALSE,
                           fixed=list(k=0, sb=numeric(0), loc=numeric(0), t2=numeric(0))
                           )
 
-model.11100 <- makeBayouModel(lnBMR ~ lnMass + lnMass2 + endo, rjpars = numeric(0), cache, prior.11100, impute = NULL, D=D.1XX(1))
+model.11100 <- makeBayouModelDev(lnBMR ~ lnMass + lnMass2 + endo, rjpars = numeric(0), cache, prior.11100, impute = NULL, D=D.1XX(1))
 prior.11100(model.11100$startpar)
 model.11100$model$lik.fn(model.11100$startpar, cache, cache$dat)$loglik
 
@@ -146,7 +146,7 @@ prior.mamm11100 <- make.prior(mammtree, plot.prior = FALSE,
                           fixed=list(k=0, sb=numeric(0), loc=numeric(0), t2=numeric(0))
 )
 
-model.mamm11100 <- makeBayouModel(lnBMR ~ lnMass + lnMass2, rjpars = numeric(0), mammcache, prior.mamm11100, impute = NULL, D=D.1XX(1))
+model.mamm11100 <- makeBayouModelDev(lnBMR ~ lnMass + lnMass2, rjpars = numeric(0), mammcache, prior.mamm11100, impute = NULL, D=D.1XX(1))
 prior.mamm11100(model.mamm11100$startpar)
 model.mamm11100$model$lik.fn(model.mamm11100$startpar, mammcache, mammcache$dat)$loglik
 
@@ -163,7 +163,7 @@ prior.mamm11000 <- make.prior(mammtree, plot.prior = FALSE,
                               fixed=list(k=0, sb=numeric(0), loc=numeric(0), t2=numeric(0))
 )
 
-model.mamm11000 <- makeBayouModel(lnBMR ~ lnMass, rjpars = numeric(0), mammcache, prior.mamm11000, impute = NULL, D=D.1XX(1))
+model.mamm11000 <- makeBayouModelDev(lnBMR ~ lnMass, rjpars = numeric(0), mammcache, prior.mamm11000, impute = NULL, D=D.1XX(1))
 prior.mamm11000(model.mamm11000$startpar)
 model.mamm11000$model$lik.fn(model.mamm11000$startpar, mammcache, mammcache$dat)$loglik
 
@@ -183,7 +183,7 @@ prior.N1100 <- make.prior(tree, plot.prior = FALSE,
 )
 
 
-model.N1100 <- makeBayouModel(lnBMR ~ lnMass + lnMass2 + endo, rjpars = c("theta"), cache, prior.N1100, impute = NULL, D=D.XXX(1))
+model.N1100 <- makeBayouModelDev(lnBMR ~ lnMass + lnMass2 + endo, rjpars = c("theta"), cache, prior.N1100, impute = NULL, D=D.XXX(1))
 prior.N1100(model.N1100$startpar)
 model.N1100$model$lik.fn(model.N1100$startpar, cache, cache$dat)$loglik
 
@@ -201,7 +201,7 @@ prior.NN100 <- make.prior(tree, plot.prior = FALSE,
                                      dtheta=param.theta),
                           fixed=list(k=fixed.k, sb=fixed.sb, loc=fixed.loc)
 )
-model.NN100 <- makeBayouModel(lnBMR ~ lnMass + lnMass2 + endo, rjpars = c("theta", "lnMass"), cache, prior.NN100, impute = NULL, D=D.XXX(1))
+model.NN100 <- makeBayouModelDev(lnBMR ~ lnMass + lnMass2 + endo, rjpars = c("theta", "lnMass"), cache, prior.NN100, impute = NULL, D=D.XXX(1))
 prior.NN100(model.NN100$startpar)
 model.NN100$model$lik.fn(model.NN100$startpar, cache, cache$dat)$loglik
 
@@ -227,7 +227,7 @@ prior.11010 <- make.prior(tree, plot.prior = FALSE,
                           ),
                           fixed=list(k=0, sb=numeric(0), loc=numeric(0), pred.sig2=param.pred.sig2, pred.root=param.pred.root)
 )
-model.11010 <- makeBayouModel(lnBMR ~ lnMass + lnGS + endo, rjpars = numeric(0), cache, prior.11010, impute = c("lnGS"), D=D.1XX(1))
+model.11010 <- makeBayouModelDev(lnBMR ~ lnMass + lnGS + endo, rjpars = numeric(0), cache, prior.11010, impute = c("lnGS"), D=D.1XX(1))
 prior.11010(model.11010$startpar)
 model.11010$model$lik.fn(model.11010$startpar, cache, cache$dat)$loglik
 
@@ -253,7 +253,7 @@ prior.11011 <- make.prior(tree, plot.prior = FALSE,
                           ),
                           fixed=list(k=0, sb=numeric(0), loc=numeric(0), pred.sig2=param.pred.sig2, pred.root=param.pred.root)
 )
-model.11011 <- makeBayouModel(lnBMR ~ lnMass + lnGS + endo + lnGS*lnMass, rjpars = numeric(0), cache, prior.11011, impute = c("lnGS"), D=D.1XX(1))
+model.11011 <- makeBayouModelDev(lnBMR ~ lnMass + lnGS + endo + lnGS*lnMass, rjpars = numeric(0), cache, prior.11011, impute = c("lnGS"), D=D.1XX(1))
 prior.11011(model.11011$startpar)
 model.11011$model$lik.fn(model.11011$startpar, cache, cache$dat)$loglik
 
@@ -277,7 +277,7 @@ prior.N1010 <- make.prior(tree, plot.prior = FALSE,
                           ),
                           fixed=list(k=fixed.k, sb=fixed.sb, loc=fixed.loc, pred.sig2=param.pred.sig2, pred.root=param.pred.root)
 )
-model.N1010 <- makeBayouModel(lnBMR ~ lnMass + lnGS + endo, rjpars = c("theta"), cache, prior.N1010, impute = c("lnGS"), D=D.XXX(1))
+model.N1010 <- makeBayouModelDev(lnBMR ~ lnMass + lnGS + endo, rjpars = c("theta"), cache, prior.N1010, impute = c("lnGS"), D=D.XXX(1))
 prior.N1010(model.N1010$startpar)
 model.N1010$model$lik.fn(model.N1010$startpar, cache, cache$dat)$loglik
 
@@ -301,7 +301,7 @@ prior.NN010 <- make.prior(tree, plot.prior = FALSE,
                           ),
                           fixed=list(k=fixed.k, sb=fixed.sb, loc=fixed.loc, pred.sig2=param.pred.sig2, pred.root=param.pred.root)
 )
-model.NN010 <- makeBayouModel(lnBMR ~ lnMass + lnGS + endo, rjpars = c("theta", "lnMass"), cache, prior.NN010, impute = c("lnGS"), D=D.XXX(2))
+model.NN010 <- makeBayouModelDev(lnBMR ~ lnMass + lnGS + endo, rjpars = c("theta", "lnMass"), cache, prior.NN010, impute = c("lnGS"), D=D.XXX(2))
 prior.NN010(model.NN010$startpar)
 model.NN010$model$lik.fn(model.NN010$startpar, cache, cache$dat)$loglik
 
@@ -327,7 +327,7 @@ prior.N1011 <- make.prior(tree, plot.prior = FALSE,
                           ),
                           fixed=list(k=fixed.k, sb=fixed.sb, loc=fixed.loc, pred.sig2=param.pred.sig2, pred.root=param.pred.root)
 )
-model.N1011 <- makeBayouModel(lnBMR ~ lnMass + lnGS + endo + lnGS*lnMass, rjpars = c("theta"), cache, prior.N1011, impute = c("lnGS"), D=D.XXX(1))
+model.N1011 <- makeBayouModelDev(lnBMR ~ lnMass + lnGS + endo + lnGS*lnMass, rjpars = c("theta"), cache, prior.N1011, impute = c("lnGS"), D=D.XXX(1))
 prior.N1011(model.N1011$startpar)
 model.N1011$model$lik.fn(model.N1011$startpar, cache, cache$dat)$loglik
 
@@ -353,7 +353,7 @@ prior.NN011 <- make.prior(tree, plot.prior = FALSE,
                           ),
                           fixed=list(k=fixed.k, sb=fixed.sb, loc=fixed.loc, pred.sig2=param.pred.sig2, pred.root=param.pred.root)
 )
-model.NN011 <- makeBayouModel(lnBMR ~ lnMass + lnGS + endo + lnGS*lnMass, rjpars = c("theta", "lnMass"), cache, prior.NN011, impute = c("lnGS"), D=D.XXX(2))
+model.NN011 <- makeBayouModelDev(lnBMR ~ lnMass + lnGS + endo + lnGS*lnMass, rjpars = c("theta", "lnMass"), cache, prior.NN011, impute = c("lnGS"), D=D.XXX(2))
 prior.NN011(model.NN011$startpar)
 model.NN011$model$lik.fn(model.NN011$startpar, cache, cache$dat)$loglik
 
@@ -378,7 +378,7 @@ prior.S1010 <- make.prior(tree, plot.prior = FALSE,
                           ),
                           fixed=list(k=fixed.k.nosals, sb=fixed.sb.nosals, loc=fixed.loc.nosals, pred.sig2=param.pred.sig2, pred.root=param.pred.root)
 )
-model.S1010 <- makeBayouModel(lnBMR ~ lnMass + lnGS + endo, rjpars = c("theta"), cache, prior.S1010, impute = c("lnGS"), D=D.XXX(1))
+model.S1010 <- makeBayouModelDev(lnBMR ~ lnMass + lnGS + endo, rjpars = c("theta"), cache, prior.S1010, impute = c("lnGS"), D=D.XXX(1))
 prior.S1010(model.S1010$startpar)
 model.S1010$model$lik.fn(model.S1010$startpar, cache, cache$dat)$loglik
 
@@ -402,7 +402,7 @@ prior.SS010 <- make.prior(tree, plot.prior = FALSE,
                           ),
                           fixed=list(k=fixed.k.nosals, sb=fixed.sb.nosals, loc=fixed.loc.nosals, pred.sig2=param.pred.sig2, pred.root=param.pred.root)
 )
-model.SS010 <- makeBayouModel(lnBMR ~ lnMass + lnGS + endo, rjpars = c("theta", "lnMass"), cache, prior.SS010, impute = c("lnGS"), D=D.XXX(2))
+model.SS010 <- makeBayouModelDev(lnBMR ~ lnMass + lnGS + endo, rjpars = c("theta", "lnMass"), cache, prior.SS010, impute = c("lnGS"), D=D.XXX(2))
 prior.SS010(model.SS010$startpar)
 model.SS010$model$lik.fn(model.SS010$startpar, cache, cache$dat)$loglik
 
@@ -428,7 +428,7 @@ prior.S1011 <- make.prior(tree, plot.prior = FALSE,
                           ),
                           fixed=list(k=fixed.k.nosals, sb=fixed.sb.nosals, loc=fixed.loc.nosals, pred.sig2=param.pred.sig2, pred.root=param.pred.root)
 )
-model.S1011 <- makeBayouModel(lnBMR ~ lnMass + lnGS + endo + lnGS*lnMass, rjpars = c("theta"), cache, prior.S1011, impute = c("lnGS"), D=D.XXX(1))
+model.S1011 <- makeBayouModelDev(lnBMR ~ lnMass + lnGS + endo + lnGS*lnMass, rjpars = c("theta"), cache, prior.S1011, impute = c("lnGS"), D=D.XXX(1))
 prior.S1011(model.S1011$startpar)
 model.S1011$model$lik.fn(model.S1011$startpar, cache, cache$dat)$loglik
 
@@ -454,7 +454,7 @@ prior.SS011 <- make.prior(tree, plot.prior = FALSE,
                           ),
                           fixed=list(k=fixed.k.nosals, sb=fixed.sb.nosals, loc=fixed.loc.nosals, pred.sig2=param.pred.sig2, pred.root=param.pred.root)
 )
-model.SS011 <- makeBayouModel(lnBMR ~ lnMass + lnGS + endo + lnGS*lnMass, rjpars = c("theta", "lnMass"), cache, prior.SS011, impute = c("lnGS"), D=D.XXX(2))
+model.SS011 <- makeBayouModelDev(lnBMR ~ lnMass + lnGS + endo + lnGS*lnMass, rjpars = c("theta", "lnMass"), cache, prior.SS011, impute = c("lnGS"), D=D.XXX(2))
 prior.SS011(model.SS011$startpar)
 model.SS011$model$lik.fn(model.SS011$startpar, cache, cache$dat)$loglik
 
@@ -479,7 +479,7 @@ prior.P1010 <- make.prior(tree, plot.prior = FALSE,
                           ),
                           fixed=list(k=fixed.k.nopleth, sb=fixed.sb.nopleth, loc=fixed.loc.nopleth, pred.sig2=param.pred.sig2, pred.root=param.pred.root)
 )
-model.P1010 <- makeBayouModel(lnBMR ~ lnMass + lnGS + endo, rjpars = c("theta"), cache, prior.P1010, impute = c("lnGS"), D=D.XXX(1))
+model.P1010 <- makeBayouModelDev(lnBMR ~ lnMass + lnGS + endo, rjpars = c("theta"), cache, prior.P1010, impute = c("lnGS"), D=D.XXX(1))
 prior.P1010(model.P1010$startpar)
 model.P1010$model$lik.fn(model.P1010$startpar, cache, cache$dat)$loglik
 
@@ -503,7 +503,7 @@ prior.PP010 <- make.prior(tree, plot.prior = FALSE,
                           ),
                           fixed=list(k=fixed.k.nopleth, sb=fixed.sb.nopleth, loc=fixed.loc.nopleth, pred.sig2=param.pred.sig2, pred.root=param.pred.root)
 )
-model.PP010 <- makeBayouModel(lnBMR ~ lnMass + lnGS + endo, rjpars = c("theta", "lnMass"), cache, prior.PP010, impute = c("lnGS"), D=D.XXX(2))
+model.PP010 <- makeBayouModelDev(lnBMR ~ lnMass + lnGS + endo, rjpars = c("theta", "lnMass"), cache, prior.PP010, impute = c("lnGS"), D=D.XXX(2))
 prior.PP010(model.PP010$startpar)
 model.PP010$model$lik.fn(model.PP010$startpar, cache, cache$dat)$loglik
 
@@ -529,7 +529,7 @@ prior.P1011 <- make.prior(tree, plot.prior = FALSE,
                           ),
                           fixed=list(k=fixed.k.nopleth, sb=fixed.sb.nopleth, loc=fixed.loc.nopleth, pred.sig2=param.pred.sig2, pred.root=param.pred.root)
 )
-model.P1011 <- makeBayouModel(lnBMR ~ lnMass + lnGS + endo + lnGS*lnMass, rjpars = c("theta"), cache, prior.P1011, impute = c("lnGS"), D=D.XXX(1))
+model.P1011 <- makeBayouModelDev(lnBMR ~ lnMass + lnGS + endo + lnGS*lnMass, rjpars = c("theta"), cache, prior.P1011, impute = c("lnGS"), D=D.XXX(1))
 prior.P1011(model.P1011$startpar)
 model.P1011$model$lik.fn(model.P1011$startpar, cache, cache$dat)$loglik
 
@@ -555,7 +555,7 @@ prior.PP011 <- make.prior(tree, plot.prior = FALSE,
                           ),
                           fixed=list(k=fixed.k.nopleth, sb=fixed.sb.nopleth, loc=fixed.loc.nopleth, pred.sig2=param.pred.sig2, pred.root=param.pred.root)
 )
-model.PP011 <- makeBayouModel(lnBMR ~ lnMass + lnGS + endo + lnGS*lnMass, rjpars = c("theta", "lnMass"), cache, prior.PP011, impute = c("lnGS"), D=D.XXX(2))
+model.PP011 <- makeBayouModelDev(lnBMR ~ lnMass + lnGS + endo + lnGS*lnMass, rjpars = c("theta", "lnMass"), cache, prior.PP011, impute = c("lnGS"), D=D.XXX(2))
 prior.PP011(model.PP011$startpar)
 model.PP011$model$lik.fn(model.PP011$startpar, cache, cache$dat)$loglik
 
@@ -577,7 +577,7 @@ prior.NN000 <- make.prior(tree, plot.prior = FALSE,
                           ),
                           fixed=list(k=fixed.k, sb=fixed.sb, loc=fixed.loc)
 )
-model.NN000 <- makeBayouModel(lnBMR ~ lnMass + endo, rjpars = c("theta", "lnMass"), cache, prior.NN000, D=D.XXX(2))
+model.NN000 <- makeBayouModelDev(lnBMR ~ lnMass + endo, rjpars = c("theta", "lnMass"), cache, prior.NN000, D=D.XXX(2))
 prior.NN000(model.NN000$startpar)
 model.NN000$model$lik.fn(model.NN000$startpar, cache, cache$dat)$loglik
 
@@ -599,7 +599,7 @@ prior.N1000 <- make.prior(tree, plot.prior = FALSE,
                           ),
                           fixed=list(k=fixed.k, sb=fixed.sb, loc=fixed.loc)
 )
-model.N1000 <- makeBayouModel(lnBMR ~ lnMass + endo, rjpars = c("theta"), cache, prior.N1000, D=D.XXX(1))
+model.N1000 <- makeBayouModelDev(lnBMR ~ lnMass + endo, rjpars = c("theta"), cache, prior.N1000, D=D.XXX(1))
 prior.N1000(model.N1000$startpar)
 model.N1000$model$lik.fn(model.N1000$startpar, cache, cache$dat)$loglik
 
@@ -620,7 +620,7 @@ prior.RR000 <- make.prior(tree, plot.prior = FALSE,
                                      dtheta=param.theta
                           )
 )
-model.RR000 <- makeBayouModel(lnBMR ~ lnMass + endo, rjpars = c("theta", "lnMass"), cache, prior.RR000, D=D.XXX(2))
+model.RR000 <- makeBayouModelDev(lnBMR ~ lnMass + endo, rjpars = c("theta", "lnMass"), cache, prior.RR000, D=D.XXX(2))
 prior.RR000(model.RR000$startpar)
 model.RR000$model$lik.fn(model.RR000$startpar, cache, cache$dat)$loglik
 

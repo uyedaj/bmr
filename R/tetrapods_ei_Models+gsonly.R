@@ -40,7 +40,7 @@ lnBMR <- setNames(dat[['lnBMR']], tree$tip.label)
 lnMass <- setNames(dat[['lnMass']], tree$tip.label)
 .pred <- cbind(setNames(dat[['lnMass']], tree$tip.label), setNames(dat[['lnMass']]^2, tree$tip.label), setNames(dat[['lnGenSize']], tree$tip.label))
 colnames(.pred) <- c("lnMass", "lnMass2", "lnGS")
-endotherms <- lapply(cache$desc$tips[cache$phy$edge[c(845, 1695), 2]], function(x) cache$phy$tip.label[x])
+endotherms <- lapply(cache$desc$tips[cache$phy$edge[c(845, 1707), 2]], function(x) cache$phy$tip.label[x])
 pred <- data.frame(pred, endo=as.numeric(cache$phy$tip.label %in% unlist(endotherms)))
 .pred <- pred
 
@@ -623,6 +623,36 @@ prior.RR000 <- make.prior(tree, plot.prior = FALSE,
 model.RR000 <- makeBayouModel(lnBMR ~ lnMass + endo, rjpars = c("theta", "lnMass"), cache, prior.RR000, D=D.XXX(2))
 prior.RR000(model.RR000$startpar)
 model.RR000$model$lik.fn(model.RR000$startpar, cache, cache$dat)$loglik
+
+## Pruned Genome Size
+tr <- pars2simmap(list(k=length(fixed.sb), ntheta=length(fixed.sb)+1, sb=fixed.sb, loc=rep(0, length(fixed.sb)), t2=1:length(fixed.sb)+1), tree)
+tdgs_phy <- phytools::drop.tip.simmap(tr$tree, tr$tree$tip.label[which(!tr$tree$tip.label %in% tdgs$phy$tip.label)])
+class(tdgs_phy) <- "phylo"
+tdgs2 <- make.treedata(tdgs_phy, data.frame(lnBMR=cache$dat, cache$pred))
+cache_gs <- bayou:::.prepare.ou.univariate(tdgs2$phy, tdgs2[[1]], SE=0, pred=tdgs2[c(2,4,5)])
+fixed.gs_sb <- which(sapply(cache_gs$phy$maps, length)>1)
+fixed.gs_k <- length(fixed.gs_sb)
+
+prior.gsNN010 <- make.prior(cache_gs$phy, plot.prior = FALSE, 
+                          dists=list(dalpha="dhalfcauchy", dsig2="dhalfcauchy", dbeta_lnMass="dnorm",
+                                     #dbeta_lnMass2="dnorm",
+                                     dbeta_lnGS="dnorm",
+                                     #dbeta_TempK="dnorm",
+                                     dbeta_endo="dnorm",
+                                     dsb="fixed", dk="fixed", dtheta="dnorm"
+                          ), 
+                          param=list(dalpha=param.alpha, dsig2=param.sig2, dbeta_lnMass=param.beta_lnMass,
+                                     #dbeta_lnMass2=param.beta_lnMass2,
+                                     dbeta_lnGS=param.beta_lnGS,
+                                     dbeta_endo=param.beta_endo,
+                                     dk="fixed", dsb="fixed", 
+                                     dtheta=param.theta
+                          ),
+                        fixed=list(k=fixed.gs_k, ntheta=fixed.gs_k+1, sb=fixed.gs_sb, loc=rep(0, length(fixed.gs_sb)), t2=1:fixed.gs_k+1)
+)
+model.gsNN010 <- makeBayouModel(lnBMR ~ lnMass + lnGS + endo, rjpars = c("theta", "lnMass"), cache_gs, prior = prior.gsNN010,impute=NULL, D=D.XXX(2))
+prior.gsNN010(model.gsNN010 $startpar)
+model.gsNN010$model$lik.fn(model.gsNN010$startpar, cache_gs, cache_gs$dat)$loglik
 
 
 ## N1010

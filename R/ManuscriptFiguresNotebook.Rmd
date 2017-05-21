@@ -1,0 +1,275 @@
+---
+title: "Final Figures Notebook"
+output: html_notebook
+---
+
+Creating final figures for the manuscript.
+```{r}
+## Load in fixed chains
+require(ape) 
+require(aRbor)
+require(devtools)
+#load_all("~/repos/bayou/bayou_1.0")
+#install_github("uyedaj/bayou", ref="dev")
+require(bayou)
+setwd("~/repos/bmr/R")
+```
+
+```{r}
+## Preparing for figure 1. 
+
+```
+
+
+```{r}
+## Preparing for Figure 2, loading fixed chains. 
+
+rr <- c("_fixed_r001", "_fixed_r002", "_fixed_r003", "_fixed_r004")
+
+chains <- lapply(rr, function(x) readRDS(paste("../output/runs/tetrapods_ei/tetrapods_ei_", x, ".chain.rds", sep="")))
+
+chain <- combine.chains(chains, burnin.prop=0.3)
+sumstats <- summary(chain)
+
+mymcmc_gs <- readRDS("../output/runs/tetrapods_ei/tetrapods_ei__fixed_r001.mcmc.rds")
+
+tree <- mymcmc_gs$tree
+tree <- reorder(tree, "postorder")
+dat <- mymcmc_gs$dat
+pred <- mymcmc_gs$pred
+
+cutoff <- 0.2
+sumpars <- list(sb = which(sumstats$branch.posteriors$pp > cutoff))
+sumpars$k <- length(sumpars$sb)
+sumpars$ntheta <- length(sumpars$sb)+1
+sumpars$loc <- rep(0, sumpars$k)
+sumpars$t2 <- 2:sumpars$ntheta
+sb <- sumpars$sb
+cache <- bayou:::.prepare.ou.univariate(tree, dat, SE=0, pred)
+tipregs <- bayou:::.tipregime(sumpars, tree)
+
+tr <- pars2simmap(sumpars, tree)
+descendents <- lapply(1:(length(sumpars$sb)+1), function(x) names(tipregs[tipregs==x])) 
+
+```
+
+Add a new chunk by clicking the *Insert Chunk* button on the toolbar or by pressing *Ctrl+Alt+I*.
+```{r}
+## Figure 2 boxplots
+betas <- do.call(rbind, chain$beta1)
+thetas <- do.call(rbind, chain$theta)
+endo <- chain$endo
+ids <- which(sapply(descendents, length)>3)
+cladenames <- c("Root", "Pleuronectinae", "Plethodontidae", "Salamandroidea", "Caudata", "Serpentes", "Squamata", "Chiroptera", "Mammalia", "Aves")
+o <- c(1, 4, 5, 9, 10, 2, 3, 8, 6, 7)
+ids <- ids[o]
+cladenames <- cladenames[o]
+betas <- betas[,ids]
+thetas <- thetas[,ids]
+thetas[,c(4,5,8)] <- thetas[,c(4,5,8)] + cbind(endo, endo, endo)
+ldesc <- sapply(ids, function(x) length(descendents[[x]]))
+
+
+pal <- colorRampPalette(c("#ecf0f1", "#2ecc71", "#3498db", "#9b59b6","#e74c3c",  "#e67e22", "#f1c40f"))
+set.seed(5)
+cols <- setNames(pal(length(sb)+1), c(1, sample(2:(length(sb)+1), length(sb), replace=FALSE)))
+cols <- cols[order(as.numeric(names(cols)))]
+#plotSimmap(tr$tree, colors=cols, ftype="off", mar=c(0.1,0.1,0.1,6))
+
+require(vioplot)
+#pdf("../output/figures/Fig2_boxplots.pdf", height=10, width=8, useDingbats = FALSE)
+par(mfrow=c(2,1), lwd=2)
+par(mar=c(1, 5, 8, 1))
+plot(0,0, type="n", xlab="", ylab="Intercept", xlim=c(0,11), ylim=c(-5,4.5), xaxt="n", cex.lab=1.25, yaxt="n")
+axis(2, at=seq(-6,6,2), cex=1.25)
+abline(h=seq(-6,5,1), col="gray50")
+lapply(1:length(ids), function(x) vioplot(thetas[,x], at=x, add=TRUE, col=cols[ids[x]], border="black"))
+box()
+
+par(mar=c(9, 5, 0, 1))
+plot(0,0, type="n", xlab="", ylab="Slope", xlim=c(0,11), ylim=c(0.3,1.05), xaxt="n", cex.lab=1.25, yaxt="n")
+abline(h=seq(0,2,0.1), col="gray50")
+axis(1, at=1:10, paste(cladenames, " (", ldesc,")", sep=""), las=2, cex=1.5)
+axis(2, at=seq(0,1.1,0.3),  cex=1.25)
+abline(h=c(2/3, 0.75), lty=2, lwd=3)
+lapply(1:length(ids), function(x) vioplot(betas[,x], at=x, add=TRUE, col=cols[ids[x]], cex=2))
+box()
+#dev.off()
+```
+
+When you save the notebook, an HTML file containing the code and output will be saved alongside it (click the *Preview* button or press *Ctrl+Shift+K* to preview the HTML file).
+
+```{r}
+## Preparing Figure 3 
+gs_modelnames <- c("ntetrapods_ei/tetrapods_ei_11010_r002_chain.rds", 
+                   "ntetrapods_ei/tetrapods_eiN1010_r001_chain.rds",
+                   "ntetrapods_ei/tetrapods_eiNN010_r001_chain.rds",
+                   "ntetrapods_ei/tetrapods_eiS1010_r001_chain.rds",
+                   "ntetrapods_ei/tetrapods_eiSS010_r001_chain.rds",
+                   "ntetrapods_ei/tetrapods_eiP1010_r001_chain.rds",
+                   "ntetrapods_ei/tetrapods_eiPP010_r001_chain.rds",
+                   "ntetrapods_ei/tetrapods_ei11011_r001_chain.rds",
+                   "ntetrapods_ei/tetrapods_eiN1011_r003_chain.rds",
+                   "ntetrapods_ei/tetrapods_eiNN011_r001_chain.rds",
+                   "ntetrapods_ei/tetrapods_eiS1011_r003_chain.rds",
+                   "ntetrapods_ei/tetrapods_eiSS011_r001_chain.rds",
+                   "ntetrapods_ei/tetrapods_eiP1011_r001_chain.rds",
+                   "ntetrapods_ei/tetrapods_eiPP011_r001_chain.rds"
+                )
+
+int <- c("1", "N", "N", "N", "N", "N", "N", "1", "N", "N", "N", "N", "N", "N", "1")
+slope <- c("1", "1", "N", "1", "N", "1", "N", "1", "1", "N", "1", "N", "1", "N", "1")
+interaction <- c("0", "0", "0", "0", "0", "0", "0", "1", "1", "1", "1", "1", "1", "1", "1")
+shifts <- c("0", "N", "N", "S", "S", "P", "P", "0", "N", "N", "S", "S", "P", "P", "1")
+modelspecs <- data.frame(cbind(int, slope, interaction, shifts))
+
+chains <- lapply(gs_modelnames, function(x) readRDS(paste("../output/runs/", x, sep="")))
+postburns <- lapply(chains, function(x) floor(0.4*length(x$gen)):length(x$gen))
+gsHPD <- rbind(t(sapply(1:length(chains), function(x) coda::HPDinterval(coda::mcmc(chains[[x]]$beta_lnGS[postburns[[x]]])))), coda::HPDinterval(coda::mcmc(rnorm(100000, 0, 0.5))))
+gsIntHPD <-sapply(1:length(chains), function(x) try(coda::HPDinterval(coda::mcmc(chains[[x]]$beta_lnMassxlnGS[postburns[[x]]]))))
+gsIntHPD[sapply(gsIntHPD, class)=="try-error"] <- cbind(NA, NA)
+gsIntHPD <- rbind(do.call(rbind, gsIntHPD), coda::HPDinterval(coda::mcmc(rnorm(1000000, 0, 0.25))))
+gsMeds <- c(sapply(1:length(chains), function(x) median(chains[[x]]$beta_lnGS[postburns[[x]]])),0)
+gsIntMeds <- c(sapply(1:length(chains), function(x) median(chains[[x]]$beta_lnMassxlnGS[postburns[[x]]])),0)
+gsIntMeds[sapply(gsIntMeds, is.null)] <- NA
+gsIntMeds <- do.call(c, gsIntMeds)
+```
+
+
+```{r}
+## Making Figure 3
+#pdf("../output/figures/Fig3_genomesize.pdf", height=8, width=8, useDingbats = FALSE)
+cols <- c("#34495e", "#e74c3c", "#c0392b")
+dcols <- c(1,1, "#bdc3c7", "#2ecc71", "#379adc")
+par(mar=c(5,5,2,2))
+plot(0,0, type="n", xlab="", ylab=expression(paste("Effect of Genome Size (", beta[lnGS], ")",sep="")), xaxt="n", xlim=c(0.5, length(gsMeds)+0.5), ylim=c(-1, 1), cex.lab=1.5)
+abline(h=0, lty=3)
+lapply(1:length(gsMeds), function(x){
+  arrows(x-0.1, gsHPD[x,1], x-0.1, gsHPD[x,2], code=3, angle=90, length=0.1, col = cols[as.numeric(factor(apply(modelspecs[,1:2], 1, paste, collapse="")))[x]],lwd=-1.25+as.numeric(modelspecs[x,1]) + as.numeric(modelspecs[x,2]))
+})
+points(1:length(gsMeds)-0.1, gsMeds, cex=1.5, pch=21, bg=dcols[as.numeric(factor(modelspecs[, 4]))])
+lapply(1:length(gsMeds), function(x){
+  arrows(x+0.2, gsIntHPD[x,1], x+0.2, gsIntHPD[x,2], code=3, angle=90, lwd=1, lty=2, col=cols[as.numeric(factor(apply(modelspecs[,1:2], 1, paste, collapse="")))[x]], length=0.05)
+})
+points(1:length(gsMeds)+0.2, gsIntMeds, cex=0.75, pch=21, bg=dcols[as.numeric(factor(modelspecs[, 4]))])
+#text(4.5, -0.85, labels="No interaction")
+text(4.5, -0.5, "-S")
+text(6.5-0.1, -0.5, "-P")
+text(9, -0.5, "+Interaction")
+text(11.5, -0.5, "+Int, -S")
+text(13.5, -0.5, "+Int, -P")
+text(15, -1.02, "Prior")
+
+legend(0, 1.06, legend = c("Global slope & intercept", "Separate intercepts", "Separate slopes & intercepts","No shifts", "All shifts", "- Salamander shifts", "- Plethodon shift", "Interaction coefficient"), col=c(cols, 1,1,1,1,1), lwd=c(0.75, 1.75, 2.75,0, 0,0, 0, 1), pt.lwd=c(0,0,0,1,1,1,1,0), lty=c(rep(1, 3), 0,0,0,0, 2), pch=21, pt.bg=c(0,0,0,dcols[1], dcols[3], dcols[4], dcols[5],0), pt.cex=c(0,0,0,2,2,2,2,0))
+#dev.off()
+
+```
+
+```{r}
+## Preparing Figure A1
+allwhite <- read.csv("../datasets/all_white_etal.csv")
+attributes(allwhite$iT) <- NULL
+
+uSpecies <- unique(allwhite$species)
+nSpecies <- tapply(allwhite$species, allwhite$species, length)
+spp <- names(nSpecies)[which(nSpecies > 3)]
+
+lmm <- function(species){
+  tmp <- filter_(allwhite, paste("species=='",species,"'", sep=""), paste("!is.na(mass)", sep=""), paste("!is.na(temp)", sep=""), paste("!is.na(MR)", sep=""))
+  if(nrow(tmp) < 3){return("error")}
+  lnBMR <- log(tmp$MR)
+  lnMass <- log(tmp$mass)
+  temp <- 1/(273.15+tmp$temp)*1/k
+  if(length(unique(lnMass)) ==1 | length(unique(temp))==1){
+    return("error")
+  } else {
+    lmfit <- lm(lnBMR ~ lnMass + temp)
+  }
+  return(lmfit)
+}
+k <- 8.617332478E-5; T2 <- 293.15
+tmp <- filter_(allwhite, paste("!is.na(mass)", sep=""), paste("!is.na(temp)", sep=""), paste("!is.na(MR)", sep=""))
+lnBMR <- log(tmp$MR)
+lnMass <- log(tmp$mass)
+temp <- 1/k*1/(tmp$temp+273.15)
+mod1 <- lm(lnBMR~lnMass+temp+tmp$species)
+
+lmfits <- lapply(spp, lmm)
+names(lmfits) <- spp
+lmfits <- lmfits[!(lmfits=="error")]
+sumfits <- lapply(lmfits, summary)
+
+tempCoef <- lapply(sumfits, function(x) x$coef[3, 1:2])
+tempCoefs <- do.call(rbind, tempCoef)
+o <- order(tempCoefs[,2])
+tempCoefs <- tempCoefs[o,]
+
+massCoef <- lapply(sumfits, function(x) x$coef[2,1:2])
+massCoefs <- do.call(rbind, massCoef)
+massCoefs <- massCoefs[o,]
+coefs <- cbind(tempCoefs, massCoefs)
+colnames(coefs) <- c("temp", "temp.se", "mass", "mass.se")
+
+#pdf("../output/figures/FigA1_withincoef.pdf", width = 10, height=5, useDingbats = FALSE)
+par(mfrow=c(1,2), cex.lab=1.25)
+order_se <- order(massCoefs[,'Std. Error'])
+order_se <- order_se[!is.na(massCoefs[,2])]
+includeNull <- ifelse(massCoefs[,1]+2*massCoefs[,2] > 0.66 & massCoefs[,1]-2*massCoefs[,2] < 0.75, 1, 0)
+plot(massCoefs[order_se,1], type="n", pch=21, bg=1, ylim=c(-2.1, 3.1), xlab="Species", ylab="Regression coefficient (lnBMR ~ LnMass)", xaxt="n")
+abline(h=c(0.66, 0.75))
+for(i in 1:length(order_se)){
+  lines(rep(i, 2), c(massCoefs[order_se[i],1] - 1.96* massCoefs[order_se[i],2], massCoefs[order_se[i],1] + 1.96*massCoefs[order_se,2][i]), lty=3)
+}
+points(1:length(order_se), massCoefs[order_se,1], pch=21, bg=c("black", "gray90")[includeNull[order_se]+1])
+abline(h=c(0.66666667, 0.75))
+
+order_se <- order(tempCoefs[,'Std. Error'])
+order_se <- order_se[!is.na(tempCoefs[,2])]
+includeNull <- ifelse(tempCoefs[,1]+2*tempCoefs[,2] > median(tempCoefs[,1]) & tempCoefs[,1]-2*tempCoefs[,2] < median(tempCoefs[,1]), 1, 0)
+plot(tempCoefs[order_se,1], type="n", pch=21, bg=1, ylim=c(-2.1, 0.6), xlab="Species", ylab="Regression coefficient (lnBMR ~ Temperature)", xaxt="n")
+abline(h=median(tempCoefs[,1]))
+for(i in 1:length(order_se)){
+  lines(rep(i, 2), c(tempCoefs[order_se[i],1] - 1.96* tempCoefs[order_se[i],2], tempCoefs[order_se[i],1] + 1.96*tempCoefs[order_se,2][i]), lty=3)
+}
+points(1:length(order_se), tempCoefs[order_se,1], pch=21, bg=c("black", "gray90")[includeNull[order_se]+1])
+#dev.off()
+
+```
+
+```{r}
+##Figure A2. 
+rr <- c("_u001", "_u002", "_u003", "_u004", "_u005", "_u006")
+
+chain1 <- readRDS(paste("../output/runs/tetrapods_ei/tetrapods_ei_", rr[1], ".chain.rds", sep=""))
+chain2 <- readRDS(paste("../output/runs/tetrapods_ei/tetrapods_ei_", rr[2], ".chain.rds", sep=""))
+chain3 <- readRDS(paste("../output/runs/tetrapods_ei/tetrapods_ei_", rr[3], ".chain.rds", sep=""))
+chain4 <- readRDS(paste("../output/runs/tetrapods_ei/tetrapods_ei_", rr[4], ".chain.rds", sep=""))
+chain5 <- readRDS(paste("../output/runs/tetrapods_ei/tetrapods_ei_", rr[5], ".chain.rds", sep=""))
+chain6 <- readRDS(paste("../output/runs/tetrapods_ei/tetrapods_ei_", rr[6], ".chain.rds", sep=""))
+mymcmc_gs <- readRDS("../output/runs/tetrapods_ei/tetrapods_ei__u001.mcmc.rds")
+tree <- mymcmc_gs$tree
+tree <- reorder(tree, "postorder")
+dat <- mymcmc_gs$dat
+pred <- mymcmc_gs$pred
+chains <- list(chain1, chain2, chain3, chain4, chain5, chain6)
+
+chain <- combine.chains(chains, burnin.prop=0.3)
+
+cols <- c("#3498db", "#e74c3c", "#f1c40f", "#40d47e","#8B49F7", "#9b59b6", "#8CCDE3", "#1abc9c", "#40d47e")
+
+#pdf("../output/figures/FigA2_newposteriorProbabilities_RJ.pdf", width=8, height=14, useDingbats=FALSE)
+plotSimmap.mcmc(chain, burnin=0, show.tip.label=FALSE, pp.cutoff=0.2, pal = colorRampPalette(cols), lwd=1.75)
+#dev.off()
+
+```
+
+```{r}
+##Figure A3.
+```
+
+```{r}
+##Figure A4.
+```
+
+
+

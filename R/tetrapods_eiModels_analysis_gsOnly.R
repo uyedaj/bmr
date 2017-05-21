@@ -3,12 +3,12 @@ require(bayou)
 require(devtools)
 require(aRbor)
 require(Matrix)
-source("./betaBayouFunctions.R")
-#args <- list("tetrapods_ei", "100000", "_N1011_r001", "sumpars_u6", "N1011")
+#source("./betaBayouFunctions.R")
+args <- list("tetrapods_ei", "100000", "_gsNN010_r3", "sumpars_u6", "gsNN010")
 args <- commandArgs(TRUE)
 args <- as.list(args)
 args[[2]] <- as.numeric(args[[2]])
-source("./tetrapods_ei_Models.R")
+source("./tetrapods_ei_Models+gsonly.R")
 
 prior <- priors[paste("prior", args[[5]], sep=".")][[1]]
 model <- models[paste("model", args[[5]], sep=".")][[1]]
@@ -20,14 +20,57 @@ startpar <- startpars[paste("model", args[[5]], sep=".")][[1]]
 #startpar$alpha <- 0.06
 #prior(startpar)
 #model$lik.fn(startpar, cache, cache$dat)$loglik
+SEs <- c(0.05, 0.1, 0.3)
 
-mymcmc <- bayou.makeMCMC(cache$phy, cache$dat, pred=cache$pred, SE=0, model=model, prior=prior, startpar=startpar, new.dir=paste("../output/runs/n",args[[1]],sep=""), outname=paste(args[[1]],args[[3]],sep=""), plot.freq=NULL, ticker.freq=1000, samp = 100)
-mymcmc$run(args[[2]])
+mymcmc0 <- bayou.makeMCMC(cache_gs$phy, cache_gs$dat, pred=cache_gs$pred, SE=0, model=model, prior=prior, startpar=startpar, new.dir=paste("../output/runs/n",args[[1]],sep=""), outname=paste(args[[1]],args[[3]], "ME1",sep=""), plot.freq=NULL, ticker.freq=1000, samp = 100)
+mymcmc0$run(args[[2]])
+
+chain0 <- mymcmc0$load()
+chainall <- readRDS("../output/runs/ntetrapods_ei/tetrapods_eiNN010_r001_chain.rds")
+chain0 <- set.burnin(chain0, 0.3)
+plot(chain0)
+quantile(chainall$beta_lnGS[floor(0.3*length(chainall$beta_lnGS)):length(chainall$beta_lnGS)], c(0.025, 0.25, 0.5, 0.75, 0.975))
+quantile(chain0$beta_lnGS[floor(0.3*length(chain0$beta_lnGS)):length(chain0$beta_lnGS)], c(0.025, 0.25, 0.5, 0.75, 0.975))
+coda::HPDinterval(coda::mcmc(chainall$beta_lnGS[floor(0.3*length(chainall$beta_lnGS)):length(chainall$beta_lnGS)]))
+coda::HPDinterval(coda::mcmc(chain0$beta_lnGS[floor(0.3*length(chain0$beta_lnGS)):length(chain0$beta_lnGS)]))
+coda::effectiveSize(coda::mcmc(chain0$beta_lnGS[floor(0.3*length(chain0$beta_lnGS)):length(chain0$beta_lnGS)]))
+
+plot(density(chainall$beta_lnGS), xlim=c(-0.5, 0.5))
+lines(density(chain0$beta_lnGS),col="red")
+
+
+mymcmc1 <- bayou.makeMCMC(cache$phy, cache$dat, pred=cache$pred, SE=SEs[1], model=model, prior=prior, startpar=startpar, new.dir=paste("../output/runs/n",args[[1]],sep=""), outname=paste(args[[1]],args[[3]], "ME1",sep=""), plot.freq=NULL, ticker.freq=1000, samp = 100)
+mymcmc1$run(args[[2]])
+
+mymcmc2 <- bayou.makeMCMC(cache$phy, cache$dat, pred=cache$pred, SE=SEs[2], model=model, prior=prior, startpar=startpar, new.dir=paste("../output/runs/n",args[[1]],sep=""), outname=paste(args[[1]],args[[3]], "ME2",sep=""), plot.freq=NULL, ticker.freq=1000, samp = 100)
+mymcmc2$run(args[[2]])
+
+mymcmc3 <- bayou.makeMCMC(cache$phy, cache$dat, pred=cache$pred, SE=SEs[3], model=model, prior=prior, startpar=startpar, new.dir=paste("../output/runs/n",args[[1]],sep=""), outname=paste(args[[1]],args[[3]], "ME3",sep=""), plot.freq=NULL, ticker.freq=1000, samp = 100)
+mymcmc3$run(args[[2]])
+
+pdf("../output/mcmcwSE.pdf", height=12, width=8)
+require(coda)
+chain1 <- mymcmc1$load()
+chain1 <- set.burnin(chain1, 0.3)
+chain2 <- mymcmc2$load()
+chain2 <- set.burnin(chain2, 0.3)
+chain3 <- mymcmc3$load()
+chain3 <- set.burnin(chain3, 0.3)
+plot(chain1)
+plot(chain2)
+plot(chain3)
+dev.off()
 
 chain <- mymcmc$load()
 chain <- set.burnin(chain, 0.4)
-saveRDS(chain, file=paste("../output/runs/n",args[[1]], "/", args[[1]], args[[3]],"_chain.rds",sep=""))
-saveRDS(mymcmc, file=paste("../output/runs/n",args[[1]], "/", args[[1]], args[[3]],"_mcmc.rds",sep=""))
+saveRDS(chain1, file=paste("../output/runs/n",args[[1]], "/", args[[1]], args[[3]],"_chain_ME1.rds",sep=""))
+saveRDS(mymcmc1, file=paste("../output/runs/n",args[[1]], "/", args[[1]], args[[3]],"_mcmc_ME1.rds",sep=""))
+
+saveRDS(chain2, file=paste("../output/runs/n",args[[1]], "/", args[[1]], args[[3]],"_chain_ME2.rds",sep=""))
+saveRDS(mymcmc2, file=paste("../output/runs/n",args[[1]], "/", args[[1]], args[[3]],"_mcmc_ME2.rds",sep=""))
+
+saveRDS(chain3, file=paste("../output/runs/n",args[[1]], "/", args[[1]], args[[3]],"_chain_ME3.rds",sep=""))
+saveRDS(mymcmc3, file=paste("../output/runs/n",args[[1]], "/", args[[1]], args[[3]],"_mcmc_ME3.rds",sep=""))
 
 require(foreach)
 require(doParallel)

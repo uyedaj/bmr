@@ -34,6 +34,7 @@ names(chain) <- names(chain_gs1)
 thinseq <- floor(seq(1, length(chain$gen), length.out=10000))
 chain$gen <- 1:length(chain$gen)
 attributes(chain)$model <- attributes(chain1)$model; attributes(chain)$model.pars <- attributes(chain1)$model.pars; attributes(chain)$tree <- attributes(chain1)$tree; attributes(chain)$dat <- attributes(chain1)$dat; attributes(chain)$class <- attributes(chain1)$class; attributes(chain)$burnin <-0
+saveRDS(chain, file="../output/runs/ntetrapods_ei/tetrapods_eiRR000_r1-6_chain.rds")
 plot(chain)
 sumstats <- summary(chain)
 

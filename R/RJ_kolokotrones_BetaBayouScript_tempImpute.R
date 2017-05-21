@@ -7,9 +7,9 @@ args[[2]] <- as.numeric(args[[2]])
 print(args)
 
 ## Uncomment out the following lines to run locally:
-rm(list=ls(all=TRUE))
-setwd("~/repos/bmr/R/")
-args <- list("tetrapods_ei", 100000, "_mammcurve2")
+#rm(list=ls(all=TRUE))
+#setwd("~/repos/bmr/R/")
+#args <- list("kolokotrones", 10000, "_koko_iT4")
 
 ## Future switches....These do nothing at the moment:
 pred_vars <- c("lnmass", "lnMass2", "lnGS") #Options: lnMass, lnMass2, lnGS, endo
@@ -32,10 +32,6 @@ source("./betaBayouFunctions.R")
 
 ## Match and prepare the datasets
 td <- readRDS(paste("../output/data/", args[[1]], ".rds", sep=""))
-td_gs <- readRDS("../output/data/tetrapods_gs.rds")
-lnGenSize <- setNames(td_gs$dat$lnGenSize, td_gs$phy$tip.label)
-lnGenSize <- lnGenSize[!is.na(lnGenSize)]
-
 tree <- td$phy
 dat <- td$dat
 rownames(dat) <- attributes(td)$tip.label
@@ -43,31 +39,25 @@ tree <- multi2di(tree, random=FALSE) # Resolve polytomies
 tree$edge.length[tree$edge.length==0] <- .Machine$double.eps # Bayou doesn't like 0 length branches
 td <- make.treedata(tree, dat) # Rematch data and tree
 td <- reorder(td, "postorder") # Reorder tree
-td_gs <- filter(td_gs, !is.na(lnGenSize)) # Produce a 2nd dataset of complete genome size data
-cache <- bayou:::.prepare.ou.univariate(tree, setNames(dat$lnBMR, tree$tip.label))
-tree <- reorder(tree, "postorder")
-mammals <- sapply(cache$desc$tips[tree$edge[1707, 2]], function(x) tree$tip.label[x])
-tdmamm <- treeply(td, drop.tip, tree$tip.label[!(tree$tip.label %in% mammals)])
-tree <- tdmamm$phy
-dat <- tdmamm$dat
+td <- filter(td, !is.na(lnBMR.k), !is.na(lnMass.k))
+#td_gs <- filter(td, !is.na(TempK)) # Produce a 2nd dataset of complete temperature data
+tree <- td$phy
+dat <- td$dat
 ## BM likelihood function for genome size
-gs.lik <- bm.lik(td_gs$phy, setNames(td_gs$dat[[3]], td_gs$phy$tip.label), SE=0, model="BM")
+#gs.lik <- bm.lik(td_gs$phy, setNames(td_gs$dat[[3]], td_gs$phy$tip.label), SE=0, model="BM")
 
-lnBMR <- setNames(dat[['lnBMR']], tree$tip.label)
-lnMass <- setNames(dat[['lnMass']], tree$tip.label)
-.pred <- cbind(setNames(dat[['lnMass']], tree$tip.label), setNames(dat[['lnMass']]^2, tree$tip.label))#,setNames(dat[['lnGenSize']], tree$tip.label))
-colnames(.pred) <- c("lnMass", "lnMass2")#, "lnGS")
+lnBMR <- setNames(dat[['lnBMR.k']], tree$tip.label)
+lnMass <- setNames(dat[['lnMass.k']], tree$tip.label)
+.pred <- cbind(setNames(dat[['lnMass.k']], tree$tip.label), setNames(dat[['lnMass.k']]^2, tree$tip.label), setNames(1/(dat[['Temperature.C']]+273.15), tree$tip.label))#,setNames(dat[['lnGenSize']], tree$tip.label))
+colnames(.pred) <- c("lnMass", "lnMass2", "TempK")#, "lnGS")
 
 ## Create a bayou cache object
-cache <- bayou:::.prepare.ou.univariate(tree, setNames(dat$lnBMR, tree$tip.label), pred = .pred)
+cache <- bayou:::.prepare.ou.univariate(tree, setNames(dat$lnBMR.k, tree$tip.label), pred = .pred)
 pred <- cache$pred
-# Birds branch 845; mammals branch 1707
-#endotherms <- lapply(cache$desc$tips[cache$phy$edge[c(845, 1707), 2]], function(x) cache$phy$tip.label[x])
-pred <- data.frame(pred)#, endo=as.numeric(cache$phy$tip.label %in% unlist(endotherms)))
-pred$lnGenSize <- lnGenSize[match(rownames(pred), names(lnGenSize))]
-pred <- pred[,c('lnMass', 'lnMass2', 'lnGenSize')]#, 'endo')]
-tdgs <- make.treedata(tree, pred)
-cache$pred <- pred
+# Birds branch 847; mammals branch 1709
+#endotherms <- lapply(cache$desc$tips[cache$phy$edge[c(847, 1709), 2]], function(x) cache$phy$tip.label[x])
+#pred <- data.frame(pred, endo=as.numeric(cache$phy$tip.label %in% unlist(endotherms)))
+#cache$pred <- pred
 
 ## Calculate values that will be useful for quickly imputing
 missing <- which(is.na(cache$pred[,3])) #$impute
@@ -80,10 +70,10 @@ custom.lik <- function(pars, cache, X, model="Custom"){
   n <- cache$n
   X <- cache$dat
   pred <- cache$pred
-  #pred[is.na(pred[,3]),3] <- pars$missing.pred #$impute
-  #betaID <- getTipMap(pars, cache)
+  pred[is.na(pred[,3]),3] <- pars$missing.pred #$impute
+  betaID <- getTipMap(pars, cache)
   ## Specify the model here
-  X = X - pars$beta1*pred[,1]  - pars$beta2*pred[,2] #- pars$endo*pred[,4] - pars$beta3*pred[,3]
+  X = X - pars$beta1[betaID]*pred[,1] - pars$beta2*pred[,2] - pars$beta3*pred[,3]#- pars$endo*pred[,3] #- pars$beta3*pred[,3]
   cache$dat <- X
   ## This part adds the endothermy parameter to the theta for Mammal and Bird branches
   #dpars <- pars
@@ -108,116 +98,133 @@ custom.lik <- function(pars, cache, X, model="Custom"){
 ## List of predetermined shifts with high support
 ## Since we have the endothermy parameter, there is an identifiability issue with birds and mammals; keeping only one of these shifts
 ## As an allowable shift ensures that this parameter is the difference between birds and mammals, and the other parameter is common to both.
-#bmax <- prob <- rep(1, nrow(cache$edge))
-#bmax[1707] <- 0  
-#bmax[which(cache$edge.length == .Machine$double.eps)] <- 0
-#sb <- NULL
-#k <- rpois(1, lambda=42)
-#startpars_gen <- function(sb, k) {
-#  sb <- sample((1:length(cache$bdesc))[-(which(bmax==0))], k, replace=FALSE, prob = sapply(cache$bdesc, length)[-(which(bmax==0))])
-#  startpar <- list(alpha=5, sig2=5, beta1=rnorm(k+1, 0.7, 0.05), endo=5, k=k, ntheta=k+1, theta=rnorm(k+1, -2.5, 1), sb=sb, loc=rep(0, k), t2=2:(k+1))
-#  return(startpar)
-#}
-## Fixed shifts:
+bmax <- prob <- rep(1, nrow(cache$edge))
+#bmax[1709] <- 0  
+bmax[which(cache$edge.length == .Machine$double.eps)] <- 0
+sb <- NULL
+k <- rpois(1, lambda=0.025*sum(tree$edge.length != .Machine$double.eps))
+startpars_gen <- function(sb, k) {
+  sb <- sample((1:length(cache$bdesc))[-(which(bmax==0))], k, replace=FALSE, prob = sapply(cache$bdesc, length)[-(which(bmax==0))])
+  startpar <- list(alpha=5, sig2=5, beta1=rnorm(k+1, 0.7, 0.05), beta2=rnorm(1,0,0.01), beta3=rnorm(1, -1103, 801), k=k, ntheta=k+1, theta=rnorm(k+1, -2.5, 1), sb=sb, loc=rep(0, k), t2=2:(k+1))
+  return(startpar)
+}
+
+
 ## Define starting parameters 
-#startpar <- readRDS("../output/runs/tetrapods_ei/sumpars_u6.rds")
-startpar <- list()
-startpar$sb <- numeric(0)
-startpar$k <- 0
-startpar$ntheta <- 1
-startpar$loc <- numeric(0)
-startpar$t2 <- numeric(0)
-startpar$alpha <- exp(rnorm(1, -3, 0.5))
-startpar$sig2 <- rnorm(1,0.75, 0.1)
-startpar$beta1 <- rnorm(1, 0.72, 0.2)
-startpar$beta2 <- rnorm(1, 0, 0.1)
-#startpar$endo <- rnorm(1, 4.5, 0.25)
-startpar$theta <- rnorm(length(startpar$sb)+1, -2.5, 0.25)
+startpar <- startpars_gen(sb, k)
 
 ## Get optimized starting values and trait evolutionary models for genome size. 
-#require(phylolm)#$impute 
-#tdgs <- filter(tdgs, !is.na(lnGenSize))#$impute 
-#fits <- lapply(c("BM", "OUrandomRoot", "OUfixedRoot", "EB"), function(x) phylolm(lnGenSize~1, data=tdgs$dat, phy=tdgs$phy, model=x))#$impute 
-#aics <- sapply(fits, function(x) x$aic)#$impute 
-#bestfit <- fits[[which(aics == min(aics))]]#$impute 
-#phenogram(tdgs$phy, setNames(tdgs$dat$lnGenSize, tdgs$phy$tip.label), fsize=0.5, spread.labels=FALSE)#$impute 
+require(phylolm)#$impute 
+td <- mutate(td, TempK = 1/(Temperature.C+273.15))
+tdgs <- filter(td, !is.na(TempK))#$impute 
+fits <- lapply(c("BM"), function(x) phylolm(TempK~1, data=tdgs$dat, phy=tdgs$phy, model=x))#$impute 
+aics <- sapply(fits, function(x) x$aic)#$impute 
+bestfit <- fits[[which(aics == min(aics))]]#$impute 
+
+#phenogram(tdgs$phy, setNames(tdgs$dat$lnGenSize, tdgs$phy$tip.label), fsize=0.5)#$impute 
 
 ## Set the starting imputation parameters at the ML estimate.
-#startpar$pred.root <- unname(bestfit$coeff)#$impute 
-#startpar$pred.sig2 <- unname(bestfit$sigma2)#$impute 
-#startpar <- .imputePredBM(cache, startpar, d=1, NULL, ct=NULL, prevalues=pv)$pars#$impute 
+startpar$pred.root <- unname(bestfit$coeff)#$impute 
+startpar$pred.sig2 <- unname(bestfit$sigma2)#$impute 
+startpar <- .imputePredBM(cache, startpar, d=1, NULL, ct=NULL, prevalues=pv)$pars#$impute 
 
-startpar <- startpar[c("alpha", "sig2", "beta1", "beta2", "k", "ntheta", "theta", "sb", "loc", "t2")]
+startpar <- startpar[c("alpha", "sig2", "k", "ntheta", "beta2","beta3","pred.sig2", "pred.root", "missing.pred", "beta1", "theta", "sb", "loc", "t2")]
+
 
 ## This is a function to monitor the output of bayou for our custom model
 ## Optional:
 BetaBMR.monitor = function(i, lik, pr, pars, accept, accept.type, j){
-  names <- c("gen", "lnL", "prior", "alpha","sig2", "rbeta1","beta2", "k")
-  string <- "%-8i%-8.2f%-8.2f%-8.2f%-8.2f%-8.2f%-8.2f%-8i"
+  names <- c("gen", "lnL", "prior", "alpha","sig2", "rbeta1", "beta2","beta3", "k")
+  string <- "%-8i%-8.2f%-8.2f%-8.2f%-8.2f%-8.2f%-8.2f%-8.2f%-8i"
   acceptratios <- tapply(accept, accept.type, mean)
   names <- c(names, names(acceptratios))
   if(j==0){
     cat(sprintf("%-7.7s", names), "\n", sep=" ")                           
   }
-  cat(sprintf(string, i, lik, pr, pars$alpha, pars$sig2, pars$beta1, pars$beta2, pars$k), sprintf("%-8.2f", acceptratios),"\n", sep="")
+  cat(sprintf(string, i, lik, pr, pars$alpha, pars$sig2, pars$beta1[1], pars$beta2,pars$beta3 , pars$k), sprintf("%-8.2f", acceptratios),"\n", sep="")
 }
 
 ## We're going to define a custom model with variable slopes (beta1)
-model.BetaBMR <- list(moves = list(alpha=".multiplierProposal", sig2=".multiplierProposal", 
-                                   beta1=".multiplierProposal", 
-                                   beta2=".slidingWindowProposal",
-                                   #endo=".slidingWindowProposal", 
-                                   theta=".adjustTheta"#, slide=".slide",
-                                   #k=".splitmergebd"
+model.BetaBMR <- {list(moves = list(alpha=".multiplierProposal", sig2=".multiplierProposal", 
+                                   beta1=".slidingWindowProposal", 
+                                   beta2=".slidingWindowProposal", 
+                                   beta3=".slidingWindowProposal",
+                                   theta=".adjustTheta", slide=".slide",
+                                   k=".splitmergebd"
                                    #,pred.sig2=".multiplierProposal" , pred.root=".slidingWindowProposal", #$impute 
-                                   #missing.pred=".imputePredBM" #$impute
+                                   ,missing.pred=".imputePredBM" #$impute
                                    ),
-                      control.weights = list(alpha=5, sig2=3, beta1=5, 
-                                             #beta2=8, 
-                                             beta2=4, 
+                      control.weights = list(alpha=5, sig2=3, beta1=20, 
+                                             beta2=8, beta3=5, 
                                              #endo=2, 
-                                             theta=23, #slide=3, 
-                                             k=0#,
+                                             theta=20, slide=3, k=8,
                                              #pred.sig2=1, pred.root=1, 
-                                             #missing.pred=3 #$impute
+                                             missing.pred=3 #$impute
                                              ),
-                      D = list(alpha=0.5, sig2= 0.5, beta1=0.75, 
-                               beta2=0.05, 
-                               #beta3=0.2, 
+                      D = list(alpha=0.5, sig2= 0.5, beta1=0.025, 
+                               beta2=0.002, beta3=100, 
                                #endo=0.5, 
-                               k=c(4), theta=3#, #slide=1 
-                               #,pred.sig2=1, pred.root=1
-                               #, missing.pred=1 #$impute
+                               k=c(4,0.5), theta=2, slide=1 
+                               #,pred.sig2=1, pred.root=1, 
+                               ,missing.pred=1 #$impute
                                ),
-                      parorder = names(startpar)[-which(names(startpar) %in% c('sb', 'loc', 't2'))],
-                      rjpars = c("theta"),
+                      parorder = names(startpar),
+                      rjpars = c("theta", "beta1"),
                       shiftpars = c("sb", "loc", "t2"),
                       monitor.fn = BetaBMR.monitor,
-                      lik.fn = custom.lik)
+                      lik.fn = custom.lik)}
+
+model.prime <- {list(moves = list(alpha=".multiplierProposal", sig2=".multiplierProposal", 
+                                   beta1=".slidingWindowProposal", 
+                                   beta2=".slidingWindowProposal", 
+                                   beta3=".slidingWindowProposal",
+                                   theta=".adjustTheta", #slide=".slide",
+                                   k=".splitmergebd"
+                                   #,pred.sig2=".multiplierProposal" , pred.root=".slidingWindowProposal", #$impute 
+                                   ,missing.pred=".imputePredBM" #$impute
+),
+control.weights = list(alpha=6, sig2=4, beta1=20, 
+                       beta2=8, beta3=4, 
+                       #endo=2, 
+                       theta=20, k=0#,
+                       #pred.sig2=1, pred.root=1
+                       , missing.pred=3 #$impute
+),
+D = list(alpha=0.5, sig2= 0.5, beta1=0.1, 
+         beta2=0.005, beta3=250, 
+         #endo=0.5, 
+         k=c(3,0.5), theta=2, slide=1 
+         #,pred.sig2=1, pred.root=1, 
+         ,missing.pred=1 #$impute
+),
+parorder = names(startpar),
+rjpars = c("theta", "beta1"),
+shiftpars = c("sb", "loc", "t2"),
+monitor.fn = BetaBMR.monitor,
+lik.fn = custom.lik)}
+
 
 ## Now we define the prior:
 
-prior <- make.prior(tree, plot.prior = TRUE, 
+prior <- make.prior(tree, plot.prior = FALSE, 
                     dists=list(dalpha="dhalfcauchy", dsig2="dhalfcauchy", dbeta1="dnorm",
-                               dbeta2="dnorm", 
-                               #dbeta3="dnorm", 
+                               dbeta2="dnorm", dbeta3="dnorm", 
                                #dendo="dnorm", 
-                               dsb="fixed", dk="fixed", dtheta="dnorm"
-                               #,dpred.sig2="fixed", dpred.root="fixed" #$impute
+                               dsb="dsb", dk="cdpois", dtheta="dnorm"
+                               #,dpred.sig2="dhalfcauchy", dpred.root="dnorm" #$impute
                                ), 
-                    param=list(dalpha=list(scale=1), dsig2=list(scale=1), dbeta1=list(mean=0.7, sd=0.1), 
-                               dbeta2=list(mean=0, sd=0.05),
-                               #dbeta3=list(mean=0, sd=0.5), 
-                               #dendo=list(mean=4.5, sd=0.5),  
-                               #dk=list(lambda=42.85, kmax=86), dsb=list(bmax=bmax, prob=1), 
-                               dtheta=list(mean=-2.5, sd=1.75)
-                               #,dpred.sig2="fixed", dpred.root="fixed" #$impute
+                    param=list(dalpha=list(scale=1), dsig2=list(scale=1), dbeta1=list(mean=0.7, sd=0.3), 
+                               dbeta2=list(mean=0, sd=0.01), dbeta3=list(mean=-1000, sd=1000), 
+                               #dendo=list(mean=5, sd=1),  
+                               dk=list(lambda=26.15, kmax=53), dsb=list(bmax=bmax, prob=1), 
+                               dtheta=list(mean=-3, sd=1.5)
+                               #,dpred.sig2=list(scale=1), dpred.root=list(mean=1, sd=1) #$impute
                                ), 
-                    fixed=list(sb=startpar$sb, k=startpar$k)#, pred.sig2=startpar$pred.sig2, pred.root=startpar$pred.root)
+                    #fixed=list(sb=startpar$sb, k=startpar$k)
                     )
 
 tr <- pars2simmap(startpar, cache$phy)
-plotSimmap(tr$tree, colors=tr$col, fsize=0.5)
+bayou:::plotRegimes(tr$tree, cex=0.5)
 
 ## Test to make sure shit works
 prior(startpar)
@@ -226,10 +233,9 @@ custom.lik(startpar, cache, cache$dat)$loglik
 #primerMcmc$run(10000)
 #primerChain <- primerMcmc$load()
 #startpar <- pull.pars(length(primerChain$gen), primerChain, model.prime)
-#custom.lik(.imputePredBM(cache, startpar, 1, move=NULL)$pars, cache, cache$dat)$loglik #$impute
+custom.lik(.imputePredBM(cache, startpar, 1, move=NULL)$pars, cache, cache$dat)$loglik #$impute
 
 mymcmc <- bayou.makeMCMC(tree, lnBMR, pred=pred, SE=0, model=model.BetaBMR, prior=prior, startpar=startpar, new.dir=paste("../output/runs/",args[[1]],sep=""), outname=paste(args[[1]],args[[3]],sep=""), plot.freq=NULL, ticker.freq=1000, samp = 100)
-
 mymcmc$run(args[[2]])
 
 chain <- mymcmc$load()
@@ -237,16 +243,16 @@ chain <- set.burnin(chain, 0.3)
 out <- summary(chain)
 print(out)
 
-require(foreach)
-require(doParallel)
-registerDoParallel(cores=10)
-Bk <- qbeta(seq(0,1, length.out=10), 0.3,1)
-ss <- mymcmc$steppingstone(args[[2]], chain, Bk, burnin=0.3, plot=TRUE)
-plot(ss)
+#require(foreach)
+#require(doParallel)
+#registerDoParallel(cores=6)
+#Bk <- seq(0, 1, length.out=6)
+#ss <- mymcmc$steppingstone(args[[2]], chain, Bk, burnin=0.3, plot=TRUE)
+#plot(ss)
 
-saveRDS(chain, file=paste("../output/runs/",args[[1]],"/",args[[1]],args[[3]],".chain.rds",sep=""))
-saveRDS(mymcmc, file=paste("../output/runs/",args[[1]],"/",args[[1]],args[[3]],".mcmc.rds",sep=""))
-saveRDS(ss, file=paste("../output/runs/",args[[1]],"/",args[[1]],args[[3]],".ss.rds",sep=""))
+saveRDS(chain, file=paste("../output/runs/",args[[1]],"/",args[[1]],"_",args[[3]],".chain.rds",sep=""))
+saveRDS(mymcmc, file=paste("../output/runs/",args[[1]],"/",args[[1]],"_",args[[3]],".mcmc.rds",sep=""))
+#saveRDS(ss, file=paste("../output/runs/",args[[1]],"/",args[[1]],"_",args[[3]],".ss.rds",sep=""))
 
 #ss <- readRDS(file=paste("../output/runs/",args[[1]],"/",args[[1]],"_",args[[3]],".ss.rds",sep=""))
 
@@ -311,7 +317,9 @@ sumpars$ntheta <- length(sumpars$sb)+1
 sumpars$loc <- rep(0, sumpars$k)
 sumpars$t2 <- 2:sumpars$ntheta
 tr <- pars2simmap(sumpars, tree)
-plotSimmap(tr$tree, colors=tr$col, fsize=0.25)
+pdf("../output/figures/koko1.pdf", height=50, width=8)
+bayou:::plotRegimes(tr$tree, cex=0.5)
+dev.off()
 
 summarizeDerivedState <- function(branch, chain){
   if(branch==0){
@@ -373,17 +381,17 @@ if(length(nodesc)>0){
   }
 }
 for(i in (1:nrow(regressions))){
-  plotBayoupars(sumpars, tree, colors=setNames(c(palx(nrow(regressions))[i], rep("gray80", nrow(regressions)-1)), c(i, (1:nrow(regressions))[-i])), fsize=0.2)
+  plotBayoupars(sumpars, tree, col=setNames(c(palx(nrow(regressions))[i], rep("gray80", nrow(regressions)-1)), c(i, (1:nrow(regressions))[-i])), cex=0.2)
   plot(pred[,1], dat, xlab="lnMass", ylab="lnBMR", pch=21, bg=makeTransparent("gray20", 100), col =makeTransparent("gray20", 100) )
   include <- which(names(dat) %in% descendents[[i]])
   text(pred[include, 1], dat[include], labels=names(dat[include]), col="white", cex=0.4, pos = 2)
   points(pred[include,1], dat[include], pch=21, bg=palx(nrow(regressions))[i])
   print(descendents[[i]])
-  expected <- regressions[i,1]+regressions[i,2]*pred[include,1]+sumpars$endo*pred[include,3]#+beta3*impPred[include,3]
-  o <- order(pred[include,1])
-  lines(pred[include,1][o], expected[o], col=palx(nrow(regressions))[i], lwd=2)
-#  plot(cladesummaries[[i]]$densities$beta2, col=palx(nrow(regressions))[i], xlim=c(-0.05, 0.05), lwd=3, main="Beta2")
-#  abline(v=0, col=palx(nrow(regressions))[i], lty=2, lwd=2)
+  #expected <- regressions[i,1]+regressions[i,2]*pred[include,1]+sumpars$endo*pred[include,3]#+beta3*impPred[include,3]
+  #o <- order(pred[include,1])
+  #lines(pred[include,1][o], expected[o], col=palx(nrow(regressions))[i], lwd=2)
+  #plot(cladesummaries[[i]]$densities$beta2, col=palx(nrow(regressions))[i], xlim=c(-0.05, 0.05), lwd=3, main="Beta2")
+  #abline(v=0, col=palx(nrow(regressions))[i], lty=2, lwd=2)
   plot(cladesummaries[[i]]$densities$beta1, col=palx(nrow(regressions))[i], xlim=c(0.5, 1.25), lwd=3, main="Beta1")
   abline(v=0.75, col=palx(nrow(regressions))[i], lty=2, lwd=2)
   plot(cladesummaries[[i]]$densities$theta, col=palx(nrow(regressions))[i], xlim=c(-6,3), lwd=3, main="Theta")

@@ -3,8 +3,8 @@ require(bayou)
 require(devtools)
 require(aRbor)
 require(Matrix)
-source("./betaBayouFunctions.R")
-#args <- list("tetrapods_ei", "100000", "_N1011_r001", "sumpars_u6", "N1011")
+#source("./betaBayouFunctions.R")
+args <- list("tetrapods_ei", "100000", "_NN000_ME1", "sumpars_u6", "NN000")
 args <- commandArgs(TRUE)
 args <- as.list(args)
 args[[2]] <- as.numeric(args[[2]])
@@ -20,9 +20,16 @@ startpar <- startpars[paste("model", args[[5]], sep=".")][[1]]
 #startpar$alpha <- 0.06
 #prior(startpar)
 #model$lik.fn(startpar, cache, cache$dat)$loglik
+SEs <- c(0.05, 0.1, 0.3)
 
-mymcmc <- bayou.makeMCMC(cache$phy, cache$dat, pred=cache$pred, SE=0, model=model, prior=prior, startpar=startpar, new.dir=paste("../output/runs/n",args[[1]],sep=""), outname=paste(args[[1]],args[[3]],sep=""), plot.freq=NULL, ticker.freq=1000, samp = 100)
-mymcmc$run(args[[2]])
+mymcmc1 <- bayou.makeMCMC(cache$phy, cache$dat, pred=cache$pred, SE=SEs[1], model=model, prior=prior, startpar=startpar, new.dir=paste("../output/runs/n",args[[1]],sep=""), outname=paste(args[[1]],args[[3]], "ME1",sep=""), plot.freq=NULL, ticker.freq=1000, samp = 100)
+mymcmc1$run(args[[2]])
+
+mymcmc2 <- bayou.makeMCMC(cache$phy, cache$dat, pred=cache$pred, SE=SEs[2], model=model, prior=prior, startpar=startpar, new.dir=paste("../output/runs/n",args[[1]],sep=""), outname=paste(args[[1]],args[[3]], "ME2",sep=""), plot.freq=NULL, ticker.freq=1000, samp = 100)
+mymcmc2$run(args[[2]])
+
+mymcmc3 <- bayou.makeMCMC(cache$phy, cache$dat, pred=cache$pred, SE=SEs[3], model=model, prior=prior, startpar=startpar, new.dir=paste("../output/runs/n",args[[1]],sep=""), outname=paste(args[[1]],args[[3]], "ME3",sep=""), plot.freq=NULL, ticker.freq=1000, samp = 100)
+mymcmc3$run(args[[2]])
 
 chain <- mymcmc$load()
 chain <- set.burnin(chain, 0.4)
