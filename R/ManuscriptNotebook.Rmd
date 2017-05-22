@@ -1,0 +1,226 @@
+---
+title: "The evolution of energetic scaling across the vertebrate tree of life"
+output: html_notebook
+---
+
+This is an R markdown workbook that provides a guide to the analyses conducted in Uyeda et al. 2017; "The evolution of energetic scaling across the vertebrate tree of life". 
+
+#### Load Required Packages
+```{r}
+library(treeplyr)
+devtools::install_github("uyedaj/bayou@v2.0.0-alpha")
+library(bayou)
+library(rotl)
+library(phytools)
+library(Matrix)
+library(phylolm)
+source("BMRstudyFunctions.R")
+setwd("~/repos/bmr/R/")
+```
+
+
+# Data Preparation
+
+```{r}
+
+## Read in the dataset
+allwhite <- read.csv("../datasets/all_white_etal.csv")
+## Boltzmann's constant & temperature to estimate metabolic rate at using Arrhenius equation
+k <- 8.617332478E-5
+T2 <- 293.15
+
+allwhite <- mutate(allwhite, lnBMR = log(MR), lnMass = log(mass), iTemp = 1/k*1/(temp+273.15))
+
+## Fit a multiple regression model to estimate the average Ei value across species
+tmp <- filter(allwhite, !is.na(mass), !is.na(temp), !is.na(MR))
+mod1 <- lm(lnBMR ~ lnMass + iTemp + species, data=tmp)
+Ei <- mod1$coef[3]
+
+## Some data don't have raw masses, only mean mass. Here we take the log of the means as an estimate of the mean of the logs.
+allwhite[which(is.na(allwhite[,2])),'mass'] <- sapply(allwhite[which(is.na(allwhite[,2])),1], function(x) mean(allwhite$mean.mass[which(allwhite$species==x)], na.rm=TRUE))
+
+allwhite <- filter(allwhite, !is.na(mass), !is.na(temp), !is.na(MR)) %>%  mutate(., lnBMR = log(MR), lnMass = log(mass), iTemp = 1/k*1/(temp+T2))
+
+new.dat <- group_by(allwhite, species) %>% summarize(., lnMass = mean(lnMass), lnBMR = mean(lnBMR) + Ei/k*(mean(1/(temp+273.15)) - 1/T2)) %>% arrange(., species)
+
+```
+
+#### Make the full tree
+
+```{r}
+## Load in individual trees for each taxonomic group
+amphib <- read.tree("../datasets/amph.tre")
+birds <- read.tree("../datasets/bird.tre")
+squam <- read.tree("../datasets/squa.tre")
+mamm <- read.tree("../datasets/fullnewmammal.tre")
+fish <- read.tree("../datasets/fish.tre")
+
+## Make a taxonomy table:
+trees <- list(fish=fish, amphib=amphib, squam=squam, birds=birds, mamm=mamm)
+trees <- lapply(trees, function(x) reorder(x, "postorder"))
+ntips <- sum(sapply(trees, function(x) length(x$tip.label)))
+tip.labels <- c("fish", "amphib", "squam", "birds", "mamm")
+classes <- lapply(1:length(c("fish", "amphibians", "squamates", "birds", "mammals")), function(x) data.frame("genspec"=trees[[x]]$tip.label, "class"=c("fish", "amphibians", "squamates", "birds", "mammals")[x]))
+classes <- do.call(rbind, classes)
+ 
+## Make a tree with just orders:
+edge <- matrix(c(9, 4,
+  9, 3,
+  8, 5,
+  8, 9,
+  7, 8,
+  7, 2,
+  6, 7,
+  6, 1), byrow=TRUE, ncol=2)
+## Dates from Timetree of life (timetree.org)
+edge.length <- c(274.9, 274.9, 324.5, 324.5-274.9, 382.9-324.5, 382.9, 454.6-382.9 , 454.6)
+Nnode <- 4
+ordertree <- list(edge=edge, Nnode=Nnode, tip.label=tip.labels, edge.length=edge.length)
+class(ordertree) <- 'phylo'
+ordertree <- reorder(ordertree, "postorder")
+plot(ordertree)
+
+## 
+otax <- data.frame("Class"= ordertree$tip.label, "Superclass"=c("Actinopterygii", rep("Tetrapoda",4)))
+rownames(otax) <- ordertree$tip.label
+classtree <- nodelabel.phylo(ordertree, otax, ncores=1)
+trees <- lapply(trees, multi2di)
+class(trees) <- "multiPhylo"
+plot(classtree)
+#abline(v=sapply(trees, function(x) max(nodeHeights(x))),lty=2)
+res <- glomogram.phylo(classtree, trees)
+length(res$tip.label)
+sum(res$edge.length)
+
+
+#write.tree(res, file="../output/tetrapods.tre")
+```
+
+
+```{r}
+vertTree <- read.tree("../datasets/tetrapods.tre")
+length(vertTree$tip.label)
+```
+
+#### Use OpenTree of life taxonomic name resolution to find species in the dataset not found in the tree and see if the name has changed. Replace names in the data to match the tree. 
+
+```{r}
+missing <- setdiff(new.dat[[1]], vertTree$tip.label)
+otl_missing <- ttol_queryOttIds(missing, nrequest=500, tree=FALSE)
+
+clean.dat <- new.dat
+clean.dat[[1]] <- as.character(clean.dat[[1]])
+clean.dat[[1]][match(missing, new.dat[[1]])] <- otl_missing$ttol
+
+## Manual changes to match tree:
+clean.dat$species[clean.dat$species=="Urocitellus_townsendii"] <- "Urocitellus_townsendi"
+
+
+```
+
+#### Combine tree and data
+```{r}
+td <- make.treedata(vertTree, clean.dat)
+```
+
+#### Manual patches for erroneous data:
+```{r}
+patches <- read.csv("../datasets/BMR_corrected.csv")
+patches2 <- read.csv("../datasets/BMR_corrected2.csv")
+td$dat[match(patches2$taxon, td$phy$tip.label),] <- data.frame("lnMass"=log(patches2$newMass.g), "lnBMR"=patches2$NewRate.20)
+drop <- patches$taxon[which(patches$action %in% c("cut"))]
+td <- treeply(td, drop.tip, as.character(drop))
+
+#saveRDS(td, "../output/data/tetrapods_ei.rds")
+```
+
+#### Re-Load in the final dataset.
+```{r}
+td <- readRDS("../output/data/tetrapods_ei.rds")
+td
+```
+
+# Bayou Analyses
+
+Bayou analyses can be run by loading in the different models below and then running them as suggested. Users need only to specify the name of the model, and then follow the recipe below. Naming conventions for models are 5 letters long, with Beta_0, Beta_lnMass, Beta_lnMass^2, Beta_LnGenomeSize, and Beta_lnMassXGenomeSize being indicated in that order as present (1), split among a fixed set of shifts (N) or freely estimated by reversible-jump (R). So for example, a reversible-jump model with Beta_0 and Beta_lnMass (which is the first exploratory analysis of the manuscript) can be run as shown.
+
+```{r}
+source("./Manuscript_Models.R")
+```
+
+Specify the model and then run for the number of generations indicated. This is very brief and will not be a good sample (10,000 generations only)
+
+```{r}
+mod <- "RR000"
+gens <- 10000
+prior <- priors[paste("prior", mod, sep=".")][[1]]
+model <- models[paste("model", mod, sep=".")][[1]]
+startpar <- startpars[paste("model", mod, sep=".")][[1]]
+
+
+mymcmc <- bayou.makeMCMC(cache$phy, cache$dat, pred=cache$pred, SE=0, model=model, prior=prior, startpar=startpar, new.dir=TRUE, outname=paste(mod, "run1", sep="_"), plot.freq=NULL, ticker.freq=2000, samp = 200)
+mymcmc$run(gens)
+
+```
+
+
+```{r}
+chain <- mymcmc$load()
+chain <- set.burnin(chain, 0.3)
+plot(chain)
+plotSimmap.mcmc(chain, burnin=0.3, pp.cutoff=0.2)
+```
+
+
+```{r}
+
+shiftsum <- shiftSummaries(chain, mymcmc, pp.cutoff=0.2)
+
+```
+
+
+```{r}
+shiftsum$descendents
+plot(chain)
+```
+
+```{r}
+par(mfrow=c(1,2))
+plotBranchHeatMap(td$phy, chain, variable="theta", burnin=0, pal=rainbow, legend_ticks=seq(-6,6,1))
+plotBranchHeatMap(td$phy, chain, variable="beta1", burnin=0, pal=rainbow, legend_ticks=seq(0.5, 0.9, 0.1))
+```
+
+After a set of reversible-jump analyses, we fixed the location of supported shifts and conducted a second set of analyses. These 29 shifts are used in the analyses that follow. 
+
+# Fixed shift analyses
+
+```{r}
+mod <- "NN000"
+gens <- 10000
+prior <- priors[paste("prior", mod, sep=".")][[1]]
+model <- models[paste("model", mod, sep=".")][[1]]
+startpar <- startpars[paste("model", mod, sep=".")][[1]]
+
+
+mymcmc.NN000 <- bayou.makeMCMC(cache$phy, cache$dat, pred=cache$pred, SE=0, model=model, prior=prior, startpar=startpar, new.dir=TRUE, outname=paste(mod, "run1", sep="_"), plot.freq=NULL, ticker.freq=2000, samp = 200)
+mymcmc.NN000$run(gens)
+
+chain.NN000 <- mymcmc.NN000$load()
+chain.NN000 <- set.burnin(chain.NN000, 0.3)
+
+```
+
+```{r}
+require(foreach)
+require(doParallel)
+registerDoParallel(cores=5)
+## In the actual analyses, we ran 50 steps rather than 10.
+Bk <- qbeta(seq(0,1, length.out=10), 0.3,1)
+ss.NN000 <- mymcmc.NN000$steppingstone(gens, chain.NN000, Bk = Bk, burnin=0.3, plot=FALSE)
+plot(ss.NN000)
+print(ss.NN000$lnr)
+```
+
+
+
+
